@@ -1,0 +1,8 @@
+This project prints out every possible Knight's Tour on a 5x5 grid.
+A successful tour is when every square on the grid is touched exactly once
+following a Knight's move pattern in the game of chess.
+
+This project includes knights_tour.c, a Makefile to build and run the project,
+this README, and a CHANGELOG file. 
+
+To run this project, run make in the command line then run ./knights_tour in the cl.
