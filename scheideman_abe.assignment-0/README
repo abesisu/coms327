@@ -6,3 +6,6 @@ This project includes knights_tour.c, a Makefile to build and run the project,
 this README, and a CHANGELOG file. 
 
 To run this project, run make in the command line then run ./knights_tour in the cl.
+
+To create a tarball, run tar cvfz scheideman_abe.assignment-0.tar.gz scheideman_abe.assignment-0
+from one levelhigher than this directory.
