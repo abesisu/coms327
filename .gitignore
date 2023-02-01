@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 *
+!*.c
+!*.h
+!Makefile
+!CHANGELOG
 !*/
 lecture_files/
 
