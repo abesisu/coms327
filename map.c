@@ -69,13 +69,13 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
     map->terrain[y][x - 1] = road;
     map->terrain[y - 1][x - 1] = road;
 
-    if (y > gate_row && y > 3) {
+    if (y > gate_row + 1 && y > 3) {
         y--;
         while (y > 1 && map->terrain[y - 1][x] != road) {
             y--;
             map->terrain[y][x] = road;
         }
-    } else if (y < gate_row && y < HEIGHT - 4) {
+    } else if (y < gate_row - 2 && y < HEIGHT - 4) {
         y += 2;
         while (y < HEIGHT - 2 && map->terrain[y + 1][x] != road) {
             y++;
