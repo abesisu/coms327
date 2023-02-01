@@ -50,7 +50,7 @@ void print_map(map_t *map)
  * Place a 2x2 grid for the building, roads around the building, 
  * and connect a road to the west to east road.   
  */
-int building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) {
+void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) {
     map->terrain[y][x] = building;
     map->terrain[y + 1][x] = building;
     map->terrain[y][x + 1] = building;
@@ -82,15 +82,9 @@ int building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) 
             map->terrain[y][x] = road;
         }
     }
-
-    return 0;
 }
 
-int place_buildings(map_t *map) {
-    // randomly pick pokecenter or pokemart to place first
-    // place in left half of grid at random x and y
-    // check if below west gate or above it then build a road connecting it to the east/west and north south and put roads around it
-    // repeat with other building
+void place_buildings(map_t *map) {
     terrain_e first_building, second_building; 
     int i, y, x;
 
@@ -109,12 +103,10 @@ int place_buildings(map_t *map) {
     x = rand() % 36 + 41; // cols 41 - 76
 
     building_to_map(map, second_building, y, x, map->gates.east);
-
-    return 0;
 }
 
 /* Connect the the gates with one road going north to south and another going west to east. */
-int pave_roads(map_t *map)
+void pave_roads(map_t *map)
 {
     int x_run = map->gates.south - map->gates.north;
     int row, col;
@@ -213,12 +205,10 @@ int generate_regional_terrain(map_t *map, int west_bound, int east_bound)
             }
         }
     }
-
-    return 0;
 }
-// BUGS TO FIX: SOMETIMES REGIONS GO OVER BOUNDS, AND SOMETIMES ROAD GOES OVER BOULDERS, and sometimes the roads don't always connect...
+
 /* Fill in the terrain for the map. */
-int generate_terrain(map_t *map)
+void generate_terrain(map_t *map)
 {
     generate_regional_terrain(map, 1, WIDTH / 2 - 1); // covers cols 1-38
     generate_regional_terrain(map, WIDTH / 2 - 1, WIDTH - 1); // covers cols 39-78
@@ -237,12 +227,10 @@ int generate_terrain(map_t *map)
 
         map->terrain[row][col] = tree;
     }
-
-    return 0;
 }
 
 /* Fill in the border of the given map with boulders and gates. */
-int construct_border(map_t *map)
+void construct_border(map_t *map)
 {
     // First make boulders the entire border, then randomly pick the 4 gates.
     int i, j;
@@ -266,16 +254,11 @@ int construct_border(map_t *map)
     map->terrain[HEIGHT - 1][map->gates.south] = gate;
     map->terrain[map->gates.east][WIDTH - 1] = gate;
     map->terrain[map->gates.west][0] = gate;
-
-    return 0;
 }
 
 /* Take the given struct and populate it with the necessary types of terrain, roads, and buildings. */
-int generate_map(map_t *map)
+void generate_map(map_t *map)
 {
-
-    // Currently not being used, but will be useful later on for gameplay. Might not be necessary still. Maybe is just useful for map generation
-
     srand(time(NULL));
 
     construct_border(map);
@@ -285,17 +268,11 @@ int generate_map(map_t *map)
     pave_roads(map);
     
     place_buildings(map);
-
-    return 0;
 }
 
-/**
- * Allocate memory for structs then call appropriate methods to generate the map.
-*/
+/* Allocate memory for structs then call appropriate methods to generate the map. */
 int main(int argc, char *argv[])
 {
-    // need to allocate memory for map and gates then call generate_map
-    // TODO: ACTUALLY THINK THE gateS PART SHOULD JUST BE HANDLED BY THE ROAD PART. OR MAYBE IT SHOULD BE A PART OF THE MAP AS AN ENUM...
     map_t *map;
 
     map = malloc(sizeof (*map));
