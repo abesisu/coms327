@@ -46,8 +46,69 @@ void print_map(map_t *map)
     }
 }
 
+/* 
+ * Place a 2x2 grid for the building, roads around the building, 
+ * and connect a road to the west to east road.   
+ */
+int building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) {
+    map->terrain[y][x] = building;
+    map->terrain[y + 1][x] = building;
+    map->terrain[y][x + 1] = building;
+    map->terrain[y + 1][x + 1] = building;
+
+    map->terrain[y - 1][x] = road;
+    map->terrain[y - 1][x + 1] = road; 
+    map->terrain[y - 1][x + 2] = road;
+    map->terrain[y][x + 2] = road;
+    map->terrain[y + 1][x + 2] = road;
+    map->terrain[y + 2][x + 2] = road;
+    map->terrain[y + 2][x + 1] = road;
+    map->terrain[y + 2][x] = road;
+    map->terrain[y + 2][x - 1] = road;
+    map->terrain[y + 1][x - 1] = road;
+    map->terrain[y][x - 1] = road;
+    map->terrain[y - 1][x - 1] = road;
+
+    if (y > gate_row && y > 3) {
+        y--;
+        while (y > 1 && map->terrain[y - 1][x] != road) {
+            y--;
+            map->terrain[y][x] = road;
+        }
+    } else if (y < gate_row && y < HEIGHT - 4) {
+        y += 2;
+        while (y < HEIGHT - 2 && map->terrain[y + 1][x] != road) {
+            y++;
+            map->terrain[y][x] = road;
+        }
+    }
+
+    return 0;
+}
+
 int place_buildings(map_t *map) {
+    // randomly pick pokecenter or pokemart to place first
+    // place in left half of grid at random x and y
+    // check if below west gate or above it then build a road connecting it to the east/west and north south and put roads around it
+    // repeat with other building
+    terrain_e first_building, second_building; 
+    int i, y, x;
+
+    i = rand() % 2;
+
+    first_building = (i < 1) ? pokemart : pokecenter;
+    second_building = (first_building == pokemart) ? pokecenter : pokemart;
+
+    // place first building in left half of the map
+    y = rand() % 16 + 2; // rows 2 - 17
+    x = rand() % 36 + 2; // cols 2 - 37
     
+    building_to_map(map, first_building, y, x, map->gates.west);
+
+    // place second building in the right half of the map 
+    x = rand() % 36 + 41; // cols 41 - 76
+
+    building_to_map(map, second_building, y, x, map->gates.east);
 
     return 0;
 }
@@ -222,9 +283,8 @@ int generate_map(map_t *map)
     generate_terrain(map);
     
     pave_roads(map);
-    /*
+    
     place_buildings(map);
-    */
 
     return 0;
 }
