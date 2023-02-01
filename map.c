@@ -164,12 +164,10 @@ void pave_roads(map_t *map)
         map->terrain[row][col] = road;
         col++;
     }
-
-    return 0;
 }
 
 /* Generate the regions in each half of the map to get a better terrain distribution. */
-int generate_regional_terrain(map_t *map, int west_bound, int east_bound)
+void generate_regional_terrain(map_t *map, int west_bound, int east_bound)
 {
     int x, y, region_width, region_height; 
     int i, row, col;
