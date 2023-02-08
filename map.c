@@ -44,6 +44,8 @@ void print_map(map_t *map)
             }
         }
     }
+
+    printf("\n");
 }
 
 /* 
@@ -51,6 +53,8 @@ void print_map(map_t *map)
  * and connect a road to the west to east road.   
  */
 void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) {
+    int building_connected = 0;
+
     map->terrain[y][x] = building;
     map->terrain[y + 1][x] = building;
     map->terrain[y][x + 1] = building;
@@ -69,22 +73,65 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
     map->terrain[y][x - 1] = road;
     map->terrain[y - 1][x - 1] = road;
 
-    if (y > gate_row + 1 && y > 3) {
+    if (y > gate_row + 1 && y > 3) { // pave road north to connect to west east
         y--;
         while (y > 1 && map->terrain[y - 1][x] != road) {
             y--;
             map->terrain[y][x] = road;
         }
-    } else if (y < gate_row - 2 && y < HEIGHT - 4) {
+
+        if (y != 1) {
+            building_connected = 1;
+        }
+    } else if (y < gate_row - 2 && y < HEIGHT - 4) { // pave road south to connect to west east
         y += 2;
         while (y < HEIGHT - 2 && map->terrain[y + 1][x] != road) {
             y++;
             map->terrain[y][x] = road;
         }
+
+        if (y != HEIGHT - 2) {
+            building_connected = 1;
+        }
+    }
+
+    // Handle corner cases and east and west edge cases
+    if (building_connected == 0) { // must be in a corner or edge, so try to connect
+        if (map->w > 0) { // If there is a west gate, move towards it
+            while (x > 0 && map->terrain[y][x - 1] != road) {
+                x--;
+                map->terrain[y][x] = road;
+            }
+
+            if (x > 0) {
+                building_connected = 1;
+            }
+        } else { // Otherwise go to east gate
+            while (x < WIDTH - 1 && map->terrain[y][x + 1] != road) {
+                x++;
+                map->terrain[y][x] = road;
+            }
+
+            if (x < WIDTH - 1) {
+                building_connected = 1;
+            }
+        }
+
+        if (map->n > 0 && building_connected == 0) { // move towards north gate
+            while (y > 1 && map->terrain[y - 1][x] != road) {
+                y--;
+                map->terrain[y][x] = road;
+            }
+        } else if (building_connected == 0) { // move towards south gate
+            while (y < HEIGHT - 1 && map->terrain[y + 1][x] != road) {
+                y++;
+                map->terrain[y][x] = road;
+            }
+        }
     }
 }
 
-void place_buildings(map_t *map) {
+void place_buildings(map_t *map, int manhattan_distance) {
     terrain_e first_building, second_building; 
     int i, y, x;
 
@@ -93,76 +140,175 @@ void place_buildings(map_t *map) {
     first_building = (i < 1) ? pokemart : pokecenter;
     second_building = (first_building == pokemart) ? pokecenter : pokemart;
 
+    int building_probability = ((-45 * manhattan_distance) / 200 + 50);
+
     // place first building in left half of the map
-    y = rand() % 16 + 2; // rows 2 - 17
-    x = rand() % 36 + 2; // cols 2 - 37
-    
-    building_to_map(map, first_building, y, x, map->gates.west);
+    if (manhattan_distance == 0 || rand() % 100 < building_probability) {
+        y = rand() % 16 + 2; // rows 2 - 17
+        x = rand() % 36 + 2; // cols 2 - 37
 
-    // place second building in the right half of the map 
-    x = rand() % 36 + 41; // cols 41 - 76
+        building_to_map(map, first_building, y, x, map->w);
+    }
 
-    building_to_map(map, second_building, y, x, map->gates.east);
+    if (manhattan_distance == 0 || rand() % 100 < building_probability) {
+        // place second building in the right half of the map
+        y = rand() % 16 + 2; // rows 2 - 17
+        x = rand() % 36 + 41; // cols 41 - 76
+
+        building_to_map(map, second_building, y, x, map->e);
+    }
 }
 
-/* Connect the the gates with one road going north to south and another going west to east. */
+/* Connect the gates with one road going north to south and another going west to east. */
 void pave_roads(map_t *map)
 {
-    int x_run = map->gates.south - map->gates.north;
+    int x_run = map->s - map->n;
     int row, col;
 
     row = 1;
-    col = map->gates.north;
+    col = map->n;
 
     // pave north to south road
-    while (row < (HEIGHT - 2) / 2) { // pave road halfway down
-        map->terrain[row][col] = road;
-        row++;
-    }
-
-    if (x_run < 0) { // south gate is to the west
-        while (col > map->gates.south) {
+    if (map->n > 0 && map->s > 0) {
+        while (row < (HEIGHT - 2) / 2) { // pave road halfway down
             map->terrain[row][col] = road;
-            col--;
+            row++;
         }
-    } else if (x_run > 0) { // south gate is to the east
-        while (col < map->gates.south) {
-            map->terrain[row][col] = road;
-            col++;
+
+        if (x_run < 0) { // south gate is to the west
+            while (col > map->s) {
+                map->terrain[row][col] = road;
+                col--;
+            }
+        } else if (x_run > 0) { // south gate is to the east
+            while (col < map->s) {
+                map->terrain[row][col] = road;
+                col++;
+            }
         }
-    }
 
-    while (row < HEIGHT - 1) { // pave road the rest of the way down
-        map->terrain[row][col] = road;
-        row++;
-    }
-
-    int y_rise = map->gates.east - map->gates.west;
-
-    col = 1;
-    row = map->gates.west;
-
-    // pave west to east road
-    while (col < (WIDTH - 2) / 2) { // pave road halfway east
-        map->terrain[row][col] = road;
-        col++;
-    }
-
-    if (y_rise < 0) { // east gate is to the north
-        while (row > map->gates.east) {
-            map->terrain[row][col] = road;
-            row--;
-        }
-    } else if (y_rise > 0) { // east gate is to the south
-        while (row < map->gates.east) {
+        while (row < HEIGHT - 1) { // pave road the rest of the way down
             map->terrain[row][col] = road;
             row++;
         }
     }
 
-    while (col < WIDTH - 1) { // pave road the rest of the way over
-        map->terrain[row][col] = road;
-        col++;
+    int y_rise = map->e - map->w;
+
+    col = 1;
+    row = map->w;
+
+    // pave west to east road
+    if (map->w > 0 && map->e > 0) {
+        while (col < (WIDTH - 2) / 2) { // pave road halfway east
+            map->terrain[row][col] = road;
+            col++;
+        }
+
+        if (y_rise < 0) { // east gate is to the north
+            while (row > map->e) {
+                map->terrain[row][col] = road;
+                row--;
+            }
+        } else if (y_rise > 0) { // east gate is to the south
+            while (row < map->e) {
+                map->terrain[row][col] = road;
+                row++;
+            }
+        }
+
+        while (col < WIDTH - 1) { // pave road the rest of the way over
+            map->terrain[row][col] = road;
+            col++;
+        }
+    }
+}
+
+/* Handle cases for paving the roads where the current map is on the edge or corner of the world */
+void pave_roads_edge(map_t *map)
+{
+    int row, col;
+
+    if (map->n < 0) {
+        col = map->s;
+
+        if (map->w < 0) { // northwest corner
+            for (row = HEIGHT - 2; row > map->e; row--) {
+                map->terrain[row][col] = road;
+            }
+
+            for (col = map->s; col < WIDTH - 1; col++) {
+                map->terrain[row][col] = road;
+            }
+        } else if (map->e < 0) { // northeast corner
+            for (row = HEIGHT - 2; row > map->w; row--) {
+                map->terrain[row][col] = road;
+            }
+
+            for (col = map->s; col > 0; col--) {
+                map->terrain[row][col] = road;
+            }
+        } else { // along north edge
+            pave_roads(map); // pave west to east road
+
+            // pave south road up to west-east road
+            row = HEIGHT - 2;
+            while (map->terrain[row][col] != road && row > 0) {
+                map->terrain[row][col] = road;
+                row--;
+            }
+        }
+    } else if (map->s < 0) {
+        col = map->n;
+
+        if (map->e < 0) { // southeast corner
+            for (row = 0; row < map->w; row++) {
+                map->terrain[row][col] = road;
+            }
+
+            for (col = map->n; col > 0; col--) {
+                map->terrain[row][col] = road;
+            }
+        } else if (map->w < 0) { // southwest corner
+            for (row = 0; row < map->e; row++) {
+                map->terrain[row][col] = road;
+            }
+
+            for (col = map->n; col < WIDTH - 1; col++) {
+                map->terrain[row][col] = road;
+            }
+        } else { // south edge
+            pave_roads(map); // pave west to east road
+
+            // pave north road down to west-east road
+            row = 0;
+            while (map->terrain[row][col] != road && row < HEIGHT - 1) {
+                map->terrain[row][col] = road;
+                row++;
+            }
+        }
+    } else if (map->w < 0) { // west edge of map
+        pave_roads(map); //pave north to south road
+
+        row = map->e;
+        col = WIDTH - 2;
+
+        // pave road from east gate to north-south road
+        while (map->terrain[row][col] != road && col > 0) {
+            map->terrain[row][col] = road;
+            col--;
+        }
+    } else if (map->e < 0) { // east edge of map
+        pave_roads(map); //pave north to south road
+
+        row = map->w;
+        col = 1;
+
+        // pave road from east gate to north-south road
+        while (map->terrain[row][col] != road && col < WIDTH - 1) {
+            map->terrain[row][col] = road;
+            col++;
+        }
     }
 }
 
@@ -211,7 +357,7 @@ void generate_terrain(map_t *map)
     generate_regional_terrain(map, 1, WIDTH / 2 - 1); // covers cols 1-38
     generate_regional_terrain(map, WIDTH / 2 - 1, WIDTH - 1); // covers cols 39-78
 
-    // now add some sporatic terrain
+    // now add some spontaneous terrain
     int i, row, col;
 
     for (i = 0; i < 20; i++) {
@@ -228,9 +374,9 @@ void generate_terrain(map_t *map)
 }
 
 /* Fill in the border of the given map with boulders and gates. */
-void construct_border(map_t *map)
+void construct_border(map_t *map, int n, int s, int w, int e)
 {
-    // First make boulders the entire border, then randomly pick the 4 gates.
+    // First make boulders the entire border, then place the 4 gates
     int i, j;
 
     for (i = 0; i < HEIGHT; i++) {
@@ -243,43 +389,33 @@ void construct_border(map_t *map)
         map->terrain[HEIGHT - 1][j] = boulder;
     }
 
-    map->gates.north = rand() % (WIDTH - 2) + 1; // Minus 2 and plus 1 to ensure corners aren't gates.
-    map->gates.south = rand() % (WIDTH - 2) + 1;
-    map->gates.east = rand() % (HEIGHT - 2) + 1;
-    map->gates.west = rand() % (HEIGHT - 2) + 1;
+    // 0 means generate a gate
+    map->n = (n == 0) ? rand() % (WIDTH - 2) + 1 : n; // Minus 2 and plus 1 to ensure corners aren't gates
+    map->s = (s == 0) ? rand() % (WIDTH - 2) + 1 : s;
+    map->w = (w == 0) ? rand() % (HEIGHT - 2) + 1 : w;
+    map->e = (e == 0) ? rand() % (HEIGHT - 2) + 1 : e;
 
-    map->terrain[0][map->gates.north] = gate;
-    map->terrain[HEIGHT - 1][map->gates.south] = gate;
-    map->terrain[map->gates.east][WIDTH - 1] = gate;
-    map->terrain[map->gates.west][0] = gate;
+    // -1 means don't generate a gate
+    map->terrain[0][map->n] = (n == -1) ? boulder : gate;
+    map->terrain[HEIGHT - 1][map->s] = (s == -1) ? boulder : gate;
+    map->terrain[map->w][0] = (w == -1) ? boulder : gate;
+    map->terrain[map->e][WIDTH - 1] = (e == -1) ? boulder : gate;
 }
 
-/* Take the given struct and populate it with the necessary types of terrain, roads, and buildings. */
-void generate_map(map_t *map)
+/* Take the given map and populate it with the necessary types of terrain, roads, and buildings. */
+void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance)
 {
     srand(time(NULL));
 
-    construct_border(map);
+    construct_border(map, n, s, w, e);
     
     generate_terrain(map);
-    
-    pave_roads(map);
-    
-    place_buildings(map);
-}
 
-/* Allocate memory for structs then call appropriate methods to generate the map. */
-int main(int argc, char *argv[])
-{
-    map_t *map;
+    if (n < 0 || s < 0 || w < 0 || e < 0) { // if we are by an edge, handle roads specially
+        pave_roads_edge(map);
+    } else {
+        pave_roads(map);
+    }
 
-    map = malloc(sizeof (*map));
-
-    generate_map(map);
-
-    print_map(map);
-
-    free(map);
-
-    return 0;
+    place_buildings(map, manhattan_distance);
 }
