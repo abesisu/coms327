@@ -58,7 +58,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
     world->location.y = START_Y;
     manhattan_distance = 0;
 
-    world->current_map = malloc(sizeof (map_t));
+    world->current_map = malloc(sizeof (*world->current_map));
     world->board[world->location.y][world->location.x] = world->current_map;
 
     generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, manhattan_distance);
