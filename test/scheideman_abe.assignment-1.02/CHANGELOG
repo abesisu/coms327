@@ -1,6 +1,0 @@
-1/31/23 Generate border, terrain, roads, and print the map for map.c
-2/1/23 Buildings placed on map. Clean up return values, comments, and README for scheideman_abe.assignment-1.01
-2/5/23 Created a separate file for running the game, taking user input, and traversing the world
-2/6/23 Successfully implemented map traversal and saving maps in play.c and map.c
-2/7/23 Implemented building probabilities and corner cases with roads in map.c
-2/8/23 Cleaned up bugs with map to map, added a world struct, and fixed road mappings
