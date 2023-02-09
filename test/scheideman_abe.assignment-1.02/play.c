@@ -123,6 +123,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
     for (i = 0; i < WORLD_HEIGHT; i++) {
         for (j = 0; j < WORLD_WIDTH; j++) {
             if (world->board[i][j] != NULL) {
+                printf("%d %d\n", i, j);
                 free(world->board[i][j]);
             }
         }

@@ -1,0 +1,16 @@
+World map now implemented!
+
+Using map.c, map.h, and play.c, the user can now traverse a 401 by 401 
+array of maps. When a new location is visited, a random map is generated
+that links up with the other maps around it. The maps are remembered as 
+well.
+
+This project includes map.c, map.h, play.c, a Makefile, this README, and
+a CHANGELOG file.
+
+To test the features, run make then ./play
+
+To create a tarball, run
+
+make clean - in this directory
+tar cvfz scheideman_abe.assignment-1.02.tar.gz scheideman_abe.assignment-1.02 - from the parent directory
