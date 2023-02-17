@@ -1,0 +1,15 @@
+Dijkstra's path algorithm is now calculated!
+
+Dijkstra's shortest path is calculated for rival and hiker trainer types.
+The cost maps are printed out for each map, which when followed, will
+lead the trainer's to the PC while respecting their movement limitations.
+
+This project includes map.c, map.h, path.c, path.h, world.h, play.c, a Makefile,
+this README, a CHANGELOG file, and Dr. Schaeffer's heap.c and heap.h.
+
+To test the features, run make then ./play
+
+To create a tarball, run
+
+make clean - in this directory
+tar cvfz scheideman_abe.assignment-1.03.tar.gz scheideman_abe.assignment-1.03 - from the parent directory
