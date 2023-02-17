@@ -1,52 +1,5 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include "map.h"
-
-void print_map(map_t *map)
-{
-    int i, j;
-
-    for (i = 0; i < HEIGHT; i++) {
-        for (j = 0; j < WIDTH; j++) {
-            switch (map->terrain[i][j])
-            {
-            case grass:
-                printf(".");
-                break;
-            case tall_grass:
-                printf(":");
-                break;
-            case boulder:
-                printf("%%");
-                break;
-            case tree:
-                printf("^");
-                break;
-            case water:
-                printf("~");
-                break;
-            case road:
-                printf("#");
-                break;
-            case gate:
-                printf("#");
-                break;
-            case pokemart:
-                printf("M");
-                break;
-            case pokecenter:
-                printf("C");
-                break;
-            default:
-                printf("!"); // Something went wrong
-                break;
-            }
-        }
-    }
-
-    printf("\n");
-}
 
 /* 
  * Place a 2x2 grid for the building, roads around the building, 
@@ -61,7 +14,7 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
     map->terrain[y + 1][x + 1] = building;
 
     map->terrain[y - 1][x] = road;
-    map->terrain[y - 1][x + 1] = road; 
+    map->terrain[y - 1][x + 1] = road;
     map->terrain[y - 1][x + 2] = road;
     map->terrain[y][x + 2] = road;
     map->terrain[y + 1][x + 2] = road;
@@ -83,14 +36,14 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
         if (y != 1) {
             building_connected = 1;
         }
-    } else if (y < gate_row - 2 && y < HEIGHT - 4) { // pave road south to connect to west east
+    } else if (y < gate_row - 2 && y < MAP_HEIGHT - 4) { // pave road south to connect to west east
         y += 2;
-        while (y < HEIGHT - 2 && map->terrain[y + 1][x] != road) {
+        while (y < MAP_HEIGHT - 2 && map->terrain[y + 1][x] != road) {
             y++;
             map->terrain[y][x] = road;
         }
 
-        if (y != HEIGHT - 2) {
+        if (y != MAP_HEIGHT - 2) {
             building_connected = 1;
         }
     }
@@ -107,12 +60,12 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
                 building_connected = 1;
             }
         } else { // Otherwise go to east gate
-            while (x < WIDTH - 1 && map->terrain[y][x + 1] != road) {
+            while (x < MAP_WIDTH - 1 && map->terrain[y][x + 1] != road) {
                 x++;
                 map->terrain[y][x] = road;
             }
 
-            if (x < WIDTH - 1) {
+            if (x < MAP_WIDTH - 1) {
                 building_connected = 1;
             }
         }
@@ -123,7 +76,7 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
                 map->terrain[y][x] = road;
             }
         } else if (building_connected == 0) { // move towards south gate
-            while (y < HEIGHT - 1 && map->terrain[y + 1][x] != road) {
+            while (y < MAP_HEIGHT - 1 && map->terrain[y + 1][x] != road) {
                 y++;
                 map->terrain[y][x] = road;
             }
@@ -132,7 +85,7 @@ void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row)
 }
 
 void place_buildings(map_t *map, int manhattan_distance) {
-    terrain_e first_building, second_building; 
+    terrain_e first_building, second_building;
     int i, y, x;
 
     i = rand() % 2;
@@ -170,7 +123,7 @@ void pave_roads(map_t *map)
 
     // pave north to south road
     if (map->n > 0 && map->s > 0) {
-        while (row < (HEIGHT - 2) / 2) { // pave road halfway down
+        while (row < (MAP_HEIGHT - 2) / 2) { // pave road halfway down
             map->terrain[row][col] = road;
             row++;
         }
@@ -187,7 +140,7 @@ void pave_roads(map_t *map)
             }
         }
 
-        while (row < HEIGHT - 1) { // pave road the rest of the way down
+        while (row < MAP_HEIGHT - 1) { // pave road the rest of the way down
             map->terrain[row][col] = road;
             row++;
         }
@@ -200,7 +153,7 @@ void pave_roads(map_t *map)
 
     // pave west to east road
     if (map->w > 0 && map->e > 0) {
-        while (col < (WIDTH - 2) / 2) { // pave road halfway east
+        while (col < (MAP_WIDTH - 2) / 2) { // pave road halfway east
             map->terrain[row][col] = road;
             col++;
         }
@@ -217,7 +170,7 @@ void pave_roads(map_t *map)
             }
         }
 
-        while (col < WIDTH - 1) { // pave road the rest of the way over
+        while (col < MAP_WIDTH - 1) { // pave road the rest of the way over
             map->terrain[row][col] = road;
             col++;
         }
@@ -233,15 +186,15 @@ void pave_roads_edge(map_t *map)
         col = map->s;
 
         if (map->w < 0) { // northwest corner
-            for (row = HEIGHT - 2; row > map->e; row--) {
+            for (row = MAP_HEIGHT - 2; row > map->e; row--) {
                 map->terrain[row][col] = road;
             }
 
-            for (col = map->s; col < WIDTH - 1; col++) {
+            for (col = map->s; col < MAP_WIDTH - 1; col++) {
                 map->terrain[row][col] = road;
             }
         } else if (map->e < 0) { // northeast corner
-            for (row = HEIGHT - 2; row > map->w; row--) {
+            for (row = MAP_HEIGHT - 2; row > map->w; row--) {
                 map->terrain[row][col] = road;
             }
 
@@ -252,7 +205,7 @@ void pave_roads_edge(map_t *map)
             pave_roads(map); // pave west to east road
 
             // pave south road up to west-east road
-            row = HEIGHT - 2;
+            row = MAP_HEIGHT - 2;
             while (map->terrain[row][col] != road && row > 0) {
                 map->terrain[row][col] = road;
                 row--;
@@ -274,7 +227,7 @@ void pave_roads_edge(map_t *map)
                 map->terrain[row][col] = road;
             }
 
-            for (col = map->n; col < WIDTH - 1; col++) {
+            for (col = map->n; col < MAP_WIDTH - 1; col++) {
                 map->terrain[row][col] = road;
             }
         } else { // south edge
@@ -282,7 +235,7 @@ void pave_roads_edge(map_t *map)
 
             // pave north road down to west-east road
             row = 0;
-            while (map->terrain[row][col] != road && row < HEIGHT - 1) {
+            while (map->terrain[row][col] != road && row < MAP_HEIGHT - 1) {
                 map->terrain[row][col] = road;
                 row++;
             }
@@ -291,7 +244,7 @@ void pave_roads_edge(map_t *map)
         pave_roads(map); //pave north to south road
 
         row = map->e;
-        col = WIDTH - 2;
+        col = MAP_WIDTH - 2;
 
         // pave road from east gate to north-south road
         while (map->terrain[row][col] != road && col > 0) {
@@ -305,7 +258,7 @@ void pave_roads_edge(map_t *map)
         col = 1;
 
         // pave road from east gate to north-south road
-        while (map->terrain[row][col] != road && col < WIDTH - 1) {
+        while (map->terrain[row][col] != road && col < MAP_WIDTH - 1) {
             map->terrain[row][col] = road;
             col++;
         }
@@ -323,16 +276,16 @@ void generate_regional_terrain(map_t *map, int west_bound, int east_bound)
         // get a random coordinate in the range
         x = rand() % (east_bound - west_bound);
         x += west_bound;
-        y = rand() % (HEIGHT - 3) + 2;
+        y = rand() % (MAP_HEIGHT - 3) + 2;
 
         // get a specified size for the region
         region_width = rand() % 30 + 10;
         region_height = rand() % 6 + 5;
 
         for (row = 0; row < region_height; row++) {
-            if (y + row < HEIGHT - 1) { // row is in bounds
+            if (y + row < MAP_HEIGHT - 1) { // row is in bounds
                 for (col = 0; col < region_width; col++) {
-                    if (x + col < WIDTH - 1) { // column is in bounds
+                    if (x + col < MAP_WIDTH - 1) { // column is in bounds
                         map->terrain[y + row][x + col] = regions[i];
                     } else { // column out of bounds
                         map->terrain[y + row][x - col] = regions[i];
@@ -340,7 +293,7 @@ void generate_regional_terrain(map_t *map, int west_bound, int east_bound)
                 }
             } else { // row out of bounds
                 for (col = 0; col < region_width; col++) {
-                    if (x + col < WIDTH - 1) { // column is in bounds
+                    if (x + col < MAP_WIDTH - 1) { // column is in bounds
                         map->terrain[y - row][x + col] = regions[i];
                     } else { // column out of bounds
                         map->terrain[y - row][x - col] = regions[i];
@@ -354,59 +307,57 @@ void generate_regional_terrain(map_t *map, int west_bound, int east_bound)
 /* Fill in the terrain for the map. */
 void generate_terrain(map_t *map)
 {
-    generate_regional_terrain(map, 1, WIDTH / 2 - 1); // covers cols 1-38
-    generate_regional_terrain(map, WIDTH / 2 - 1, WIDTH - 1); // covers cols 39-78
+    generate_regional_terrain(map, 1, MAP_WIDTH / 2 - 1); // covers cols 1-38
+    generate_regional_terrain(map, MAP_WIDTH / 2 - 1, MAP_WIDTH - 1); // covers cols 39-78
 
-    // now add some spontaneous terrain
+    // now add some spontaneous terrain that is impassable
     int i, row, col;
 
     for (i = 0; i < 20; i++) {
-        row = rand() % (HEIGHT - 2) + 1;
-        col = rand() % (WIDTH - 2) + 1;
+        row = rand() % (MAP_HEIGHT - 2) + 1;
+        col = rand() % (MAP_WIDTH - 2) + 1;
 
-        map->terrain[row][col] = boulder;
+        map->terrain[row][col] = border;
 
-        row = rand() % (HEIGHT - 2) + 1;
-        col = rand() % (WIDTH - 2) + 1;
+        row = rand() % (MAP_HEIGHT - 2) + 1;
+        col = rand() % (MAP_WIDTH - 2) + 1;
 
-        map->terrain[row][col] = tree;
+        map->terrain[row][col] = willow;
     }
 }
 
-/* Fill in the border of the given map with boulders and gates. */
+/* Fill in the border of the given map with borders and gates. */
 void construct_border(map_t *map, int n, int s, int w, int e)
 {
-    // First make boulders the entire border, then place the 4 gates
+    // First make the entire border, then place the 4 gates
     int i, j;
 
-    for (i = 0; i < HEIGHT; i++) {
-        map->terrain[i][0] = boulder;
-        map->terrain[i][WIDTH - 1] = boulder;
+    for (i = 0; i < MAP_HEIGHT; i++) {
+        map->terrain[i][0] = border;
+        map->terrain[i][MAP_WIDTH - 1] = border;
     }
 
-    for (j = 0; j < WIDTH; j++) {
-        map->terrain[0][j] = boulder;
-        map->terrain[HEIGHT - 1][j] = boulder;
+    for (j = 0; j < MAP_WIDTH; j++) {
+        map->terrain[0][j] = border;
+        map->terrain[MAP_HEIGHT - 1][j] = border;
     }
 
     // 0 means generate a gate
-    map->n = (n == 0) ? rand() % (WIDTH - 2) + 1 : n; // Minus 2 and plus 1 to ensure corners aren't gates
-    map->s = (s == 0) ? rand() % (WIDTH - 2) + 1 : s;
-    map->w = (w == 0) ? rand() % (HEIGHT - 2) + 1 : w;
-    map->e = (e == 0) ? rand() % (HEIGHT - 2) + 1 : e;
+    map->n = (n == 0) ? rand() % (MAP_WIDTH - 2) + 1 : n; // Minus 2 and plus 1 to ensure corners aren't gates
+    map->s = (s == 0) ? rand() % (MAP_WIDTH - 2) + 1 : s;
+    map->w = (w == 0) ? rand() % (MAP_HEIGHT - 2) + 1 : w;
+    map->e = (e == 0) ? rand() % (MAP_HEIGHT - 2) + 1 : e;
 
     // -1 means don't generate a gate
-    map->terrain[0][map->n] = (n == -1) ? boulder : gate;
-    map->terrain[HEIGHT - 1][map->s] = (s == -1) ? boulder : gate;
-    map->terrain[map->w][0] = (w == -1) ? boulder : gate;
-    map->terrain[map->e][WIDTH - 1] = (e == -1) ? boulder : gate;
+    map->terrain[0][map->n] = (n == -1) ? border : gate;
+    map->terrain[MAP_HEIGHT - 1][map->s] = (s == -1) ? border : gate;
+    map->terrain[map->w][0] = (w == -1) ? border : gate;
+    map->terrain[map->e][MAP_WIDTH - 1] = (e == -1) ? border : gate;
 }
 
 /* Take the given map and populate it with the necessary types of terrain, roads, and buildings. */
 void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance)
 {
-    srand(time(NULL));
-
     construct_border(map, n, s, w, e);
     
     generate_terrain(map);
