@@ -5,6 +5,10 @@
 
 #include "world.h"
 
+static int32_t path_cmp(const void *key, const void *with) { // make heap compare nodes based on cost
+    return ((path_t *) key)->cost - ((path_t *) with)->cost;
+}
+
 void print_view(world_t *world)
 {
     int i, j;
@@ -75,19 +79,23 @@ void print_view(world_t *world)
     printf("\n");
 }
 
-/* According to 1.04, print out the Dijkstra's path map. */
+/* According to 1.03, print out the Dijkstra's path map. */
 void print_path_map(path_t path[MAP_HEIGHT][MAP_WIDTH])
 {
     int i, j;
     for (i = 0; i < MAP_HEIGHT; i++) {
         for (j = 0; j < MAP_WIDTH - 1; j++) {
             if (path[i][j].cost == INT_MAX) {
-                printf("  ");
+                printf("   ");
             } else {
                 printf("%02d ", path[i][j].cost % 100);
             }
         }
-        printf("%02d\n", path[i][MAP_WIDTH - 1].cost % 100);
+        if (path[i][MAP_WIDTH - 1].cost == INT_MAX) {
+            printf("  \n");
+        } else {
+            printf("%02d\n", path[i][MAP_WIDTH - 1].cost % 100);
+        }
     }
     printf("\n");
 }
@@ -186,8 +194,8 @@ void place_gates(world_t *world)
         world->current_map->n = -1;
     } else if (world->location.y == WORLD_HEIGHT - 1) { // bottom of map
         world->current_map->s = -1;
-    } 
-    
+    }
+
     if (world->location.x == 0) { // west edge of map
         world->current_map->w = -1;
     } else if (world->location.x == WORLD_WIDTH - 1) { // east edge of map
@@ -202,14 +210,14 @@ void place_gates(world_t *world)
     // Check for south gate
     if (world->location.y < WORLD_HEIGHT - 1 && world->board[world->location.y + 1][world->location.x] != NULL) {
         world->current_map->s = world->board[world->location.y + 1][world->location.x]->n;
-    } 
-    
+    }
+
     // Check for west gate
     if (world->location.x > 0 && world->board[world->location.y][world->location.x - 1] != NULL) {
         world->current_map->w = world->board[world->location.y][world->location.x - 1]->e;
     }
 
-    // Check for east gate 
+    // Check for east gate
     if (world->location.x < WORLD_WIDTH - 1 && world->board[world->location.y][world->location.x + 1] != NULL) {
         world->current_map->e = world->board[world->location.y][world->location.x + 1]->w;
     }
@@ -220,6 +228,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
     int i, j;
     world_t *world;
     trainer_t pc_trainer, hiker_trainer, rival_trainer;
+    heap_t heap;
     srand(time(NULL));
 
     world = malloc(sizeof (*world));
@@ -250,8 +259,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
     print_view(world);
 
-    dijkstra_path(world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
-    dijkstra_path(world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);
+    heap_init(&heap, path_cmp, NULL);
+    dijkstra_path(&heap, world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
+    dijkstra_path(&heap, world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);
 
     print_path_map(world->hiker_path);
     print_path_map(world->rival_path);
@@ -296,6 +306,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
                 }
             }
 
+            heap_delete(&heap);
             free(world);
 
             break;
@@ -321,8 +332,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
         print_view(world);
 
-        dijkstra_path(world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
-        dijkstra_path(world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);
+        dijkstra_path(&heap, world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
+        dijkstra_path(&heap, world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);
 
         print_path_map(world->hiker_path);
         print_path_map(world->rival_path);

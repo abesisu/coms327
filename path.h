@@ -34,6 +34,6 @@ typedef struct trainer {
     coordinate_t position;
 } trainer_t;
 
-void dijkstra_path(map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH], trainer_type_e trainer_type, coordinate_t to);
+void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH], trainer_type_e trainer_type, coordinate_t to);
 
-#endif //COMS327_PATH_H
+#endif
