@@ -1,9 +1,9 @@
 all: play
 
-play: play.o map.o path.o heap.o
-	gcc play.o map.o path.o heap.o -o play
+play: main.o map.o path.o heap.o
+	gcc main.o map.o path.o heap.o -o play
 
-play.o: main.c world.h
+main.o: main.c world.h
 	gcc -Wall -Werror -g main.c -c
 
 map.o: map.c map.h
@@ -16,4 +16,4 @@ heap.o: heap.c heap.h
 	gcc -Wall -Werror -g heap.c -c
 
 clean:
-	rm -f play play.o map.o path.o heap.o *~ core
+	rm -f play main.o map.o path.o heap.o *~ core
