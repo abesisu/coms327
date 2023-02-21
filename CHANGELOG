@@ -6,3 +6,4 @@
 2/8/23 Cleaned up bugs with map to map, added a world struct, and fixed road mappings
 2/15/23 Add logic for Dijkstra's algorithm and handle different trainer and terrain cases
 2/17/23 Finish debugging Dijkstra's algorithm and refactor code and files
+2/20/23 Added struct init functions to clean up memory errors on Pyrite

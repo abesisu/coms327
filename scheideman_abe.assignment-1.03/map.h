@@ -31,4 +31,6 @@ typedef struct map {
 
 void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance);
 
+void map_init(map_t *map);
+
 #endif

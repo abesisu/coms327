@@ -98,7 +98,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y - 1][p->coordinate.x - 1].heap_node) &&
             (path[p->coordinate.y - 1][p->coordinate.x - 1].cost >
              (p->cost + path[p->coordinate.y - 1][p->coordinate.x - 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y - 1][p->coordinate.x - 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y - 1][p->coordinate.x - 1].terrain.cost > 0)) {
             path[p->coordinate.y - 1][p->coordinate.x - 1].cost =
                     (p->cost + path[p->coordinate.y - 1][p->coordinate.x - 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y - 1][p->coordinate.x - 1].heap_node);
@@ -106,7 +106,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y - 1][p->coordinate.x    ].heap_node) &&
             (path[p->coordinate.y - 1][p->coordinate.x    ].cost >
              (p->cost + path[p->coordinate.y - 1][p->coordinate.x].terrain.cost) &&
-             p->cost + path[p->coordinate.y - 1][p->coordinate.x].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y - 1][p->coordinate.x].terrain.cost > 0)) {
             path[p->coordinate.y - 1][p->coordinate.x    ].cost =
                     (p->cost + path[p->coordinate.y - 1][p->coordinate.x    ].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y - 1][p->coordinate.x    ].heap_node);
@@ -114,7 +114,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y - 1][p->coordinate.x + 1].heap_node) &&
             (path[p->coordinate.y - 1][p->coordinate.x + 1].cost >
              (p->cost + path[p->coordinate.y - 1][p->coordinate.x + 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y - 1][p->coordinate.x + 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y - 1][p->coordinate.x + 1].terrain.cost > 0)) {
             path[p->coordinate.y - 1][p->coordinate.x + 1].cost =
                     (p->cost + path[p->coordinate.y - 1][p->coordinate.x + 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y - 1][p->coordinate.x + 1].heap_node);
@@ -122,7 +122,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y    ][p->coordinate.x - 1].heap_node) &&
             (path[p->coordinate.y    ][p->coordinate.x - 1].cost >
              (p->cost + path[p->coordinate.y    ][p->coordinate.x - 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y    ][p->coordinate.x - 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y    ][p->coordinate.x - 1].terrain.cost > 0)) {
             path[p->coordinate.y    ][p->coordinate.x - 1].cost =
                     (p->cost + path[p->coordinate.y    ][p->coordinate.x - 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y    ][p->coordinate.x - 1].heap_node);
@@ -130,7 +130,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y    ][p->coordinate.x + 1].heap_node) &&
             (path[p->coordinate.y    ][p->coordinate.x + 1].cost >
              (p->cost + path[p->coordinate.y    ][p->coordinate.x + 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y    ][p->coordinate.x + 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y    ][p->coordinate.x + 1].terrain.cost > 0)) {
             path[p->coordinate.y    ][p->coordinate.x + 1].cost =
                     (p->cost + path[p->coordinate.y    ][p->coordinate.x + 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y    ][p->coordinate.x + 1].heap_node);
@@ -138,7 +138,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y + 1][p->coordinate.x - 1].heap_node) &&
             (path[p->coordinate.y + 1][p->coordinate.x - 1].cost >
              (p->cost + path[p->coordinate.y + 1][p->coordinate.x - 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y + 1][p->coordinate.x - 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y + 1][p->coordinate.x - 1].terrain.cost > 0)) {
             path[p->coordinate.y + 1][p->coordinate.x - 1].cost =
                     (p->cost + path[p->coordinate.y + 1][p->coordinate.x - 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y + 1][p->coordinate.x - 1].heap_node);
@@ -146,7 +146,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y + 1][p->coordinate.x    ].heap_node) &&
             (path[p->coordinate.y + 1][p->coordinate.x    ].cost >
              (p->cost + path[p->coordinate.y + 1][p->coordinate.x    ].terrain.cost) &&
-             p->cost + path[p->coordinate.y + 1][p->coordinate.x    ].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y + 1][p->coordinate.x    ].terrain.cost > 0)) {
             path[p->coordinate.y + 1][p->coordinate.x    ].cost =
                     (p->cost + path[p->coordinate.y + 1][p->coordinate.x    ].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y + 1][p->coordinate.x    ].heap_node);
@@ -154,7 +154,7 @@ void dijkstra_path(heap_t *heap, map_t *map, path_t path[MAP_HEIGHT][MAP_WIDTH],
         if ((path[p->coordinate.y + 1][p->coordinate.x + 1].heap_node) &&
             (path[p->coordinate.y + 1][p->coordinate.x + 1].cost >
              (p->cost + path[p->coordinate.y + 1][p->coordinate.x + 1].terrain.cost) &&
-             p->cost + path[p->coordinate.y + 1][p->coordinate.x + 1].terrain.cost > 0)) {
+              p->cost + path[p->coordinate.y + 1][p->coordinate.x + 1].terrain.cost > 0)) {
             path[p->coordinate.y + 1][p->coordinate.x + 1].cost =
                     (p->cost + path[p->coordinate.y + 1][p->coordinate.x + 1].terrain.cost);
             heap_decrease_key_no_replace(heap, path[p->coordinate.y + 1][p->coordinate.x + 1].heap_node);

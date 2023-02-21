@@ -3,8 +3,8 @@ all: play
 play: play.o map.o path.o heap.o
 	gcc play.o map.o path.o heap.o -o play
 
-play.o: play.c world.h
-	gcc -Wall -Werror -g play.c -c
+play.o: main.c world.h
+	gcc -Wall -Werror -g main.c -c
 
 map.o: map.c map.h
 	gcc -Wall -Werror -g map.c -c

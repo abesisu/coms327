@@ -9,70 +9,70 @@ static int32_t path_cmp(const void *key, const void *with) { // make heap compar
     return ((path_t *) key)->cost - ((path_t *) with)->cost;
 }
 
-void print_view(world_t *world)
+void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
 {
-    int i, j;
+    int y, x;
 
-    for (i = 0; i < MAP_HEIGHT; i++) {
-        for (j = 0; j < MAP_WIDTH; j++) {
-            switch (world->current_map->terrain[i][j])
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            switch (map->terrain[y][x])
             {
                 case grass:
-                    world->view[i][j] = '.';
+                    view[y][x] = '.';
                     break;
                 case tall_grass:
-                    world->view[i][j] = ':';
+                    view[y][x] = ':';
                     break;
                 case boulder:
-                    world->view[i][j] = '%';
+                    view[y][x] = '%';
                     break;
                 case border:
-                    world->view[i][j] = '%';
+                    view[y][x] = '%';
                     break;
                 case tree:
-                    world->view[i][j] = '^';
+                    view[y][x] = '^';
                     break;
                 case willow:
-                    world->view[i][j] = '^';
+                    view[y][x] = '^';
                     break;
                 case water:
-                    world->view[i][j] = '~';
+                    view[y][x] = '~';
                     break;
                 case road:
-                    world->view[i][j] = '#';
+                    view[y][x] = '#';
                     break;
                 case gate:
-                    world->view[i][j] = '#';
+                    view[y][x] = '#';
                     break;
                 case pokemart:
-                    world->view[i][j] = 'M';
+                    view[y][x] = 'M';
                     break;
                 case pokecenter:
-                    world->view[i][j] = 'C';
+                    view[y][x] = 'C';
                     break;
                 case pc:
-                    world->view[i][j] = '@';
+                    view[y][x] = '@';
                     break;
                 case hiker:
-                    world->view[i][j] = 'h';
+                    view[y][x] = 'h';
                     break;
                 case rival:
-                    world->view[i][j] = 'r';
+                    view[y][x] = 'r';
                     break;
                 default:
-                    world->view[i][j] = '!'; // Something went wrong
+                    view[y][x] = '!'; // Something went wrong
                     break;
             }
         }
 
-        if (i < MAP_HEIGHT - 1) {
-            world->view[i][MAP_WIDTH] = '\n';
+        if (y < MAP_HEIGHT - 1) {
+            view[y][MAP_WIDTH] = '\n';
         }
     }
 
-    for (i = 0; i < MAP_HEIGHT; i++) {
-        for (j = 0; j < MAP_WIDTH + 1; j++) {
-            printf("%c", world->view[i][j]);
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH + 1; x++) {
+            printf("%c", view[y][x]);
         }
     }
 
@@ -82,19 +82,19 @@ void print_view(world_t *world)
 /* According to 1.03, print out the Dijkstra's path map. */
 void print_path_map(path_t path[MAP_HEIGHT][MAP_WIDTH])
 {
-    int i, j;
-    for (i = 0; i < MAP_HEIGHT; i++) {
-        for (j = 0; j < MAP_WIDTH - 1; j++) {
-            if (path[i][j].cost == INT_MAX) {
+    int y, x;
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH - 1; x++) {
+            if (path[y][x].cost == INT_MAX) {
                 printf("   ");
             } else {
-                printf("%02d ", path[i][j].cost % 100);
+                printf("%02d ", path[y][x].cost % 100);
             }
         }
-        if (path[i][MAP_WIDTH - 1].cost == INT_MAX) {
+        if (path[y][MAP_WIDTH - 1].cost == INT_MAX) {
             printf("  \n");
         } else {
-            printf("%02d\n", path[i][MAP_WIDTH - 1].cost % 100);
+            printf("%02d\n", path[y][MAP_WIDTH - 1].cost % 100);
         }
     }
     printf("\n");
@@ -125,15 +125,15 @@ int check_trainer_position(trainer_type_e type, terrain_e terrain)
 }
 
 /* Add the PC to a road in this map. */
-void place_pc(map_t *map, trainer_t pc_trainer)
+void place_pc(map_t *map, trainer_t *pc_trainer)
 {
-    int i, j, count;
+    int y, x, count;
     count = 0;
 
     // loop through the world once counting all the roads
-    for (i = 1; i < MAP_HEIGHT; i++) {
-        for (j = 1; j < MAP_WIDTH; j++) {
-            if (map->terrain[i][j] == road) {
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road) {
                 count++;
             }
         }
@@ -144,19 +144,19 @@ void place_pc(map_t *map, trainer_t pc_trainer)
 
     // Add the coordinates of each road to the array
     count = 0;
-    for (i = 1; i < MAP_HEIGHT; i++) {
-        for (j = 1; j < MAP_WIDTH; j++) {
-            if (map->terrain[i][j] == road) {
-                pc_start_options[count].x = j;
-                pc_start_options[count].y = i;
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road) {
+                pc_start_options[count].x = x;
+                pc_start_options[count].y = y;
                 count++;
             }
         }
     }
 
     // randomly pick one of those coordinates for the pc_train
-    pc_trainer.position = pc_start_options[rand() % count];
-    map->terrain[pc_trainer.position.y][pc_trainer.position.x] = pc;
+    pc_trainer->position = pc_start_options[rand() % count];
+    map->terrain[pc_trainer->position.y][pc_trainer->position.x] = pc;
 }
 
 void place_trainer(trainer_t trainer, terrain_e terrain[MAP_HEIGHT][MAP_WIDTH]) {
@@ -194,8 +194,8 @@ void place_gates(world_t *world)
         world->current_map->n = -1;
     } else if (world->location.y == WORLD_HEIGHT - 1) { // bottom of map
         world->current_map->s = -1;
-    } 
-    
+    }
+
     if (world->location.x == 0) { // west edge of map
         world->current_map->w = -1;
     } else if (world->location.x == WORLD_WIDTH - 1) { // east edge of map
@@ -210,56 +210,111 @@ void place_gates(world_t *world)
     // Check for south gate
     if (world->location.y < WORLD_HEIGHT - 1 && world->board[world->location.y + 1][world->location.x] != NULL) {
         world->current_map->s = world->board[world->location.y + 1][world->location.x]->n;
-    } 
-    
+    }
+
     // Check for west gate
     if (world->location.x > 0 && world->board[world->location.y][world->location.x - 1] != NULL) {
         world->current_map->w = world->board[world->location.y][world->location.x - 1]->e;
     }
 
-    // Check for east gate 
+    // Check for east gate
     if (world->location.x < WORLD_WIDTH - 1 && world->board[world->location.y][world->location.x + 1] != NULL) {
         world->current_map->e = world->board[world->location.y][world->location.x + 1]->w;
     }
 }
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
+void trainer_init(map_t *map, trainer_t *pc_trainer, trainer_t *hiker_trainer, trainer_t *rival_trainer)
 {
-    int i, j;
-    world_t *world;
-    trainer_t pc_trainer, hiker_trainer, rival_trainer;
-    heap_t heap;
-    srand(time(NULL));
+    pc_trainer->type = pc_train;
+    pc_trainer->position.x = -1;
+    pc_trainer->position.y = -1;
+    place_pc(map, pc_trainer);
 
-    world = malloc(sizeof (*world));
+    hiker_trainer->type = hiker_train;
+    hiker_trainer->position.x = -1;
+    hiker_trainer->position.y = -1;
 
-    for (i = 0; i < WORLD_HEIGHT; i++) {
-        for (j = 0; j < WORLD_WIDTH; j++) {
-            world->board[i][j] = NULL;
+    rival_trainer->type = rival_train;
+    rival_trainer->position.x = -1;
+    rival_trainer->position.y = -1;
+}
+
+void world_init(world_t *world)
+{
+    int x, y;
+    for (y = 0; y < WORLD_HEIGHT; y++) {
+        for (x = 0; x < WORLD_WIDTH; x++) {
+            world->board[y][x] = NULL;
         }
     }
 
-    int fly_x, fly_y, manhattan_distance;
+    world->current_map = malloc(sizeof (*world->current_map));
 
     world->location.x = START_X;
     world->location.y = START_Y;
-    manhattan_distance = 0;
 
-    world->board[world->location.y][world->location.x] = malloc(sizeof (*world->current_map));
-    world->current_map = world->board[world->location.y][world->location.x];
+    world->board[START_Y][START_X] = malloc(sizeof (*world->current_map));
+    world->current_map = world->board[START_Y][START_X];
+    map_init(world->current_map);
 
-    generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, manhattan_distance);
+    generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, 0);
 
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            world->hiker_path[y][x].heap_node = NULL;
+            world->hiker_path[y][x].coordinate.x = x;
+            world->hiker_path[y][x].coordinate.y = y;
+            world->hiker_path[y][x].terrain.type = border;
+            world->hiker_path[y][x].terrain.cost = INT_MAX;
+            world->hiker_path[y][x].cost = INT_MAX;
 
-    pc_trainer.type = pc_train;
-    hiker_trainer.type = hiker_train;
-    rival_trainer.type = rival_train;
+            world->rival_path[y][x].heap_node = NULL;
+            world->rival_path[y][x].coordinate.x = x;
+            world->rival_path[y][x].coordinate.y = y;
+            world->rival_path[y][x].terrain.type = border;
+            world->rival_path[y][x].terrain.cost = INT_MAX;
+            world->rival_path[y][x].cost = INT_MAX;
+        }
+    }
 
-    place_pc(world->current_map, pc_trainer);
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            world->view[y][x] = '!';
+        }
 
-    print_view(world);
+        world->view[y][MAP_WIDTH] = '\n';
+    }
+}
 
+void world_delete(world_t *world)
+{
+    int x, y;
+    // loop through world and free everything
+    for (y = 0; y < WORLD_HEIGHT; y++) {
+        for (x = 0; x < WORLD_WIDTH; x++) {
+            if (world->board[y][x] != NULL) {
+                free(world->board[y][x]);
+            }
+        }
+    }
+}
+
+int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
+{
+    srand(time(NULL));
+
+    world_t *world;
+    world = malloc(sizeof (*world));
+    world_init(world);
+
+    trainer_t pc_trainer, hiker_trainer, rival_trainer;
+    trainer_init(world->current_map, &pc_trainer, &hiker_trainer, &rival_trainer);
+
+    heap_t heap;
     heap_init(&heap, path_cmp, NULL);
+
+    print_view(world->current_map, world->view);
+
     dijkstra_path(&heap, world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
     dijkstra_path(&heap, world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);
 
@@ -268,6 +323,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
     printf("(%d, %d)\n", world->location.x - START_X, START_Y - world->location.y);
 
     char input = '\0';
+    int fly_x, fly_y, manhattan_distance;
 
     while (input != 'q') {
         scanf(" %c", &input);
@@ -297,16 +353,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
                 continue;
             }
         } else if (input == 'q') {
-            // loop through world and free everything
-            for (i = 0; i < WORLD_HEIGHT; i++) {
-                for (j = 0; j < WORLD_WIDTH; j++) {
-                    if (world->board[i][j] != NULL) {
-                        free(world->board[i][j]);
-                    }
-                }
-            }
-
             heap_delete(&heap);
+
+            world_delete(world);
             free(world);
 
             break;
@@ -318,6 +367,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
         if (world->board[world->location.y][world->location.x] == NULL) {
             world->board[world->location.y][world->location.x] = malloc(sizeof (*world->current_map));
             world->current_map = world->board[world->location.y][world->location.x];
+            map_init(world->current_map);
 
             place_gates(world);
 
@@ -328,9 +378,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
         world->current_map = world->board[world->location.y][world->location.x];
 
-        place_pc(world->current_map, pc_trainer);
+        place_pc(world->current_map, &pc_trainer);
 
-        print_view(world);
+        print_view(world->current_map, world->view);
 
         dijkstra_path(&heap, world->current_map, world->hiker_path, hiker_trainer.type, pc_trainer.position);
         dijkstra_path(&heap, world->current_map, world->rival_path, rival_trainer.type, pc_trainer.position);

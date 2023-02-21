@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include "map.h"
 
-/* 
- * Place a 2x2 grid for the building, roads around the building, 
- * and connect a road to the west to east road.   
+/*
+ * Place a 2x2 grid for the building, roads around the building,
+ * and connect a road to the west to east road.
  */
 void building_to_map(map_t *map, terrain_e building, int y, int x, int gate_row) {
     int building_connected = 0;
@@ -268,7 +268,7 @@ void pave_roads_edge(map_t *map)
 /* Generate the regions in each half of the map to get a better terrain distribution. */
 void generate_regional_terrain(map_t *map, int west_bound, int east_bound)
 {
-    int x, y, region_width, region_height; 
+    int x, y, region_width, region_height;
     int i, row, col;
     terrain_e regions[5] = {boulder, tree, water, tall_grass, tall_grass};
 
@@ -359,7 +359,7 @@ void construct_border(map_t *map, int n, int s, int w, int e)
 void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance)
 {
     construct_border(map, n, s, w, e);
-    
+
     generate_terrain(map);
 
     if (n < 0 || s < 0 || w < 0 || e < 0) { // if we are by an edge, handle roads specially
@@ -369,4 +369,20 @@ void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance
     }
 
     place_buildings(map, manhattan_distance);
+}
+
+void map_init(map_t *map)
+{
+    int x, y;
+
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            map->terrain[y][x] = grass;
+        }
+    }
+
+    map->n = 0;
+    map->s = 0;
+    map->w = 0;
+    map->e = 0;
 }

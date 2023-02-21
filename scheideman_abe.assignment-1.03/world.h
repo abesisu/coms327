@@ -14,4 +14,8 @@ typedef struct world {
     char view[MAP_HEIGHT][MAP_WIDTH + 1];
 } world_t;
 
+void world_init(world_t *world);
+
+void world_delete(world_t *world);
+
 #endif
