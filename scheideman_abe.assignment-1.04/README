@@ -1,0 +1,16 @@
+Characters are now added to the map!
+
+There are now any number of characters desired and the PC added to the map.
+There are hikers and rivals which path to the PC, pacers that go back and
+forth, swimmers that stay in the water, explorers that go almost anywhere,
+wanderers that stay in their region, and sentries that don't move.
+
+This project includes map.c, map.h, path.c, path.h, world.h, util.h main.c,
+trainer.c, trainer.h, a Makefile, this README, a CHANGELOG file, and
+Dr. Schaeffer's heap.c and heap.h.
+
+To test the features, run make then ./play or ./play --numtrainers <integer>
+
+To create a tarball, run:
+make clean - in this directory
+tar cvfz scheideman_abe.assignment-1.04.tar.gz scheideman_abe.assignment-1.04 - from the parent directory
