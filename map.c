@@ -417,10 +417,6 @@ void map_init(heap_t *turn_heap, map_t *map, int num_trainers)
 
 void map_delete(map_t *map)
 {
-    int x, y;
-    for (y = 0; y < MAP_HEIGHT; y++) {
-        for (x = 0; x < MAP_WIDTH; x++) {
-            trainer_delete(map);
-        }
-    }
+    trainer_delete(map);
+    free(map);
 }
