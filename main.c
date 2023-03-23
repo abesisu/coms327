@@ -259,7 +259,8 @@ void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
             heap_insert(turn_heap, t);
         }
 
-        if (world->current_map->trainer_map[world->current_map->pc_pos.y][world->current_map->pc_pos.x]->next_turn == -1) {
+        if (world->current_map->trainer_map[world->current_map->pc_pos.y][world->current_map->pc_pos.x] != NULL &&
+            world->current_map->trainer_map[world->current_map->pc_pos.y][world->current_map->pc_pos.x]->next_turn == -1) {
             break;
         }
     }
