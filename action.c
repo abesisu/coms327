@@ -168,8 +168,9 @@ void trainer_info(map_t *map)
     WINDOW *trainer_win;
     char *trainer_info[map->num_trainers];
 
-    trainer_win = create_newwin(10, 23, 0, 0);
+    trainer_win = create_newwin(21, 24, 1, 0);
     i = 0;
+    keypad(trainer_win, TRUE);
 
     for (y = 1; y < MAP_HEIGHT - 1; y++) {
         for (x = 1; x < MAP_WIDTH - 1; x++) {
