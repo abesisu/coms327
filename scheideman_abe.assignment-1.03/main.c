@@ -26,7 +26,7 @@ void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
                 case boulder:
                     view[y][x] = '%';
                     break;
-                case border:
+                case edge:
                     view[y][x] = '%';
                     break;
                 case tree:
@@ -105,7 +105,7 @@ int check_trainer_position(trainer_type_e type, terrain_e terrain)
 {
     int check = 1;
 
-    if (terrain == border ||
+    if (terrain == edge ||
         terrain == willow ||
         terrain == pc ||
         terrain == hiker ||
@@ -264,14 +264,14 @@ void world_init(world_t *world)
             world->hiker_path[y][x].heap_node = NULL;
             world->hiker_path[y][x].coordinate.x = x;
             world->hiker_path[y][x].coordinate.y = y;
-            world->hiker_path[y][x].terrain.type = border;
+            world->hiker_path[y][x].terrain.type = edge;
             world->hiker_path[y][x].terrain.cost = INT_MAX;
             world->hiker_path[y][x].cost = INT_MAX;
 
             world->rival_path[y][x].heap_node = NULL;
             world->rival_path[y][x].coordinate.x = x;
             world->rival_path[y][x].coordinate.y = y;
-            world->rival_path[y][x].terrain.type = border;
+            world->rival_path[y][x].terrain.type = edge;
             world->rival_path[y][x].terrain.cost = INT_MAX;
             world->rival_path[y][x].cost = INT_MAX;
         }

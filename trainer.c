@@ -7,8 +7,8 @@ int check_trainer_position(map_t *map, coordinate_t pos, trainer_type_e type)
 {
     int check = 1;
 
-    if (map->terrain[pos.y][pos.x] == border     ||
-        map->terrain[pos.y][pos.x] == willow     ||
+    if (map->terrain[pos.y][pos.x] == edge ||
+        map->terrain[pos.y][pos.x] == willow ||
         map->trainer_map[pos.y][pos.x] != NULL) {
         check = 0;
     } else if ((type == swimmer && map->terrain[pos.y][pos.x] != water) ||
@@ -64,8 +64,10 @@ void place_pc(heap_t *turn_heap, map_t *map)
 
     map->trainer_map[start.y][start.x] = malloc(sizeof (trainer_t));
     trainer_init(map->trainer_map[start.y][start.x], pc);
+    map->pc_pos.y = start.y;
+    map->pc_pos.x = start.x;
 
-    map->trainer_map[start.y][start.x]->pos = start_options[rand() % count];
+    map->trainer_map[start.y][start.x]->pos = start;
     heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
 }
 

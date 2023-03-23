@@ -1,9 +1,10 @@
 #include <limits.h>
+#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
 #include <string.h>
+#include <time.h>
+
 #include "world.h"
 
 static int32_t path_cmp(const void *key, const void *with) { // make heap compare nodes based on cost
@@ -15,9 +16,42 @@ static int32_t turn_cmp(const void *key, const void *with) { // make heap compar
     return (next_turn == 0) ? ((trainer_t *) key)->seq_num - ((trainer_t *) with)->seq_num : next_turn;
 }
 
-void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
+chtype view[MAP_HEIGHT][MAP_WIDTH];
+
+void init_terminal(void)
+{
+    initscr();
+    raw();
+    noecho();
+    curs_set(0);
+    keypad(stdscr, TRUE);
+    start_color();
+    init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
+    init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
+    init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLUE);
+    init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
+    init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
+}
+
+void init_view()
+{
+    int x, y;
+
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            view[y][x] = ' ';
+        }
+    }
+}
+
+void render_view(map_t *map)
 {
     int y, x;
+    int color;
+
+    clear();
 
     for (y = 0; y < MAP_HEIGHT; y++) {
         for (x = 0; x < MAP_WIDTH; x++) {
@@ -25,46 +59,48 @@ void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
             {
                 case grass:
                     view[y][x] = '.';
+                    color = COLOR_GREEN;
                     break;
                 case tall_grass:
                     view[y][x] = ':';
+                    color = COLOR_GREEN;
                     break;
                 case boulder:
+                case edge:
                     view[y][x] = '%';
-                    break;
-                case border:
-                    view[y][x] = '%';
+                    color = COLOR_WHITE;
                     break;
                 case tree:
-                    view[y][x] = '^';
-                    break;
                 case willow:
                     view[y][x] = '^';
+                    color = COLOR_MAGENTA;
                     break;
                 case water:
                     view[y][x] = '~';
+                    color = COLOR_BLUE;
                     break;
                 case road:
-                    view[y][x] = '#';
-                    break;
                 case gate:
-                    view[y][x] = '#';
-                    break;
                 case bridge:
                     view[y][x] = '#';
+                    color = COLOR_YELLOW;
                     break;
                 case pokemart:
                     view[y][x] = 'M';
+                    color = COLOR_CYAN;
                     break;
                 case pokecenter:
                     view[y][x] = 'C';
+                    color = COLOR_CYAN;
                     break;
                 default:
                     view[y][x] = '!'; // Something went wrong
+                    color = COLOR_RED;
                     break;
             }
 
             if  (map->trainer_map[y][x] != NULL) {
+                color = COLOR_RED;
                 switch (map->trainer_map[y][x]->type) {
                     case pc:
                         view[y][x] = '@';
@@ -95,405 +131,137 @@ void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
                         break;
                 }
             }
-        }
 
-
-
-        if (y < MAP_HEIGHT - 1) {
-            view[y][MAP_WIDTH] = '\n';
+            attron(COLOR_PAIR(color));
+            mvaddch(1 + y, x, view[y][x]);
+            attroff(COLOR_PAIR(color));
         }
     }
 
-    for (y = 0; y < MAP_HEIGHT; y++) {
-        for (x = 0; x < MAP_WIDTH + 1; x++) {
-            printf("%c", view[y][x]);
-        }
-    }
-
-    printf("\n");
+    refresh();
 }
 
-int check_random_turn(int random_direction, map_t *map, coordinate_t pos, trainer_type_e type) {
-    int check, terrain_cost;
+int pc_turn(map_t *map, trainer_t *pc)
+{
+    int quit_game, valid;
+    int key;
 
-    check = 0;
+    quit_game = valid = 0;
 
-    if (random_direction == 0) { // check up
-        if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y - 1][pos.x]) {
-                check = 1;
-            }
-        } else if (type == explorer) {
-            terrain_cost = get_terrain_cost(map->terrain[pos.y - 1][pos.x], type);
-            if (terrain_cost != INT_MAX && map->trainer_map[pos.y - 1][pos.x] == NULL) {
-                check = 1;
-            }
-        }
-    } else if (random_direction == 1) { // check right
-        if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y][pos.x + 1]) {
-                check = 1;
-            }
-        } else if (type == explorer) {
-            terrain_cost = get_terrain_cost(map->terrain[pos.y][pos.x + 1], type);
-            if (terrain_cost != INT_MAX && map->trainer_map[pos.y][pos.x + 1] == NULL) {
-                check = 1;
-            }
-        }
-    } else if (random_direction == 2) { // check down
-        if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y + 1][pos.x]) {
-                check = 1;
-            }
-        } else if (type == explorer) {
-            terrain_cost = get_terrain_cost(map->terrain[pos.y + 1][pos.x], type);
-            if (terrain_cost != INT_MAX && map->trainer_map[pos.y + 1][pos.x] == NULL) {
-                check = 1;
-            }
-        }
-    }  else if (random_direction == 3) { // check left
-        if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y][pos.x - 1]) {
-                check = 1;
-            }
-        } else if (type == explorer) {
-            terrain_cost = get_terrain_cost(map->terrain[pos.y][pos.x - 1], type);
-            if (terrain_cost != INT_MAX && map->trainer_map[pos.y][pos.x - 1] == NULL) {
-                check = 1;
-            }
+    while (!valid) {
+        key = getch();
+
+        switch (key) {
+            case '7':
+            case 'y':
+            case '8':
+            case 'k':
+            case '9':
+            case 'u':
+            case '6':
+            case 'l':
+            case '3':
+            case 'n':
+            case '2':
+            case 'j':
+            case '1':
+            case 'b':
+            case '4':
+            case 'h':
+                move_pc(map, pc, key);
+                valid = 1;
+                break;
+            case '5':
+            case ' ':
+            case '.':
+                pc->next_turn = pc->next_turn + 15;
+                valid = 1;
+                break;
+            case '>':
+                enter_building(map, pc);
+                valid = 1;
+                break;
+            case 't':
+                trainer_info(map);
+                render_view(map);
+                valid = 0;
+                continue;
+            case 'Q':
+                quit_game = 1;
+                valid = 1;
+                break;
+            default:
+                mvprintw(22, 1,
+                         "Use movement keys, info key, or 'Q' to quit.");
+                valid = 0;
         }
     }
 
-    return check;
-}
-
-void random_turn(map_t *map, trainer_t *t) {
-    int random_direction, valid_direction;
-    random_direction = rand() % 4;
-    valid_direction = check_random_turn(random_direction, map, t->pos, t->type);
-    while (!valid_direction) {
-        random_direction = rand() % 4;
-        valid_direction = check_random_turn(random_direction, map, t->pos, t->type);
+    if (pc->next_turn < 0) {
+        quit_game = 1;
     }
 
-    if (random_direction == 0) { // GO UP
-        t->dir.y = -1;
-        t->dir.x = 0;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.y--;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
-    } else if (random_direction == 1) { // go right
-        t->dir.y = 0;
-        t->dir.x = 1;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.x++;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
-    } else if (random_direction == 2) { // go down
-        t->dir.y = 1;
-        t->dir.x = 0;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.y++;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
-    } else if (random_direction == 3) { // go left
-        t->dir.y = 0;
-        t->dir.x = -1;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.x--;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
-    }
+    return quit_game;
 }
 
 void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
 {
     trainer_t *t;
-    path_t *cheapest_path;
-    terrain_e current_terrain;
-    int move_cost;
-    int x, y;
-    coordinate_t pc_pos;
+    int x, y, quit_game;
     path_t swimmer_path[MAP_HEIGHT][MAP_WIDTH];
+
+    quit_game = 0;
 
     for (y = 0; y < MAP_HEIGHT; y++) {
         for (x = 0; x < MAP_WIDTH; x++) {
-            if (world->current_map->trainer_map[y][x] != NULL) {
-                if (world->current_map->trainer_map[y][x]->type == pc) {
-                    pc_pos.y = y;
-                    pc_pos.x = x;
-                }
-            }
-
             swimmer_path[y][x].heap_node = NULL;
             swimmer_path[y][x].coordinate.x = x;
             swimmer_path[y][x].coordinate.y = y;
-            swimmer_path[y][x].terrain.type = border;
+            swimmer_path[y][x].terrain.type = edge;
             swimmer_path[y][x].terrain.cost = INT_MAX;
             swimmer_path[y][x].cost = INT_MAX;
         }
     }
 
-    while ((t = heap_remove_min(turn_heap))) {
-        if (t->type == pc) { // for now, just stay in place
-            t->next_turn = t->next_turn + 15;
-            pc_pos = t->pos;
-        } else if (t->type == hiker) {
-            cheapest_path = &world->hiker_path[t->pos.y - 1][t->pos.x - 1];
+    render_view(world->current_map);
 
-            dijkstra_path(path_heap, world->current_map, world->hiker_path, hiker);
+    while (!quit_game) {
+        t = heap_remove_min(turn_heap);
 
-            if (world->hiker_path[t->pos.y - 1][t->pos.x].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y - 1][t->pos.x];
-            }
-            if (world->hiker_path[t->pos.y - 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y - 1][t->pos.x + 1];
-            }
-            if (world->hiker_path[t->pos.y][t->pos.x - 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y][t->pos.x - 1];
-            }
-            if (world->hiker_path[t->pos.y][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y][t->pos.x + 1];
-            }
-            if (world->hiker_path[t->pos.y + 1][t->pos.x - 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y + 1][t->pos.x - 1];
-            }
-            if (world->hiker_path[t->pos.y + 1][t->pos.x].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y + 1][t->pos.x];
-            }
-            if (world->hiker_path[t->pos.y + 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->hiker_path[t->pos.y + 1][t->pos.x + 1];
-            }
-            if (cheapest_path->cost == 0) {
-                cheapest_path = &world->rival_path[t->pos.y    ][t->pos.x    ];
-            }
-
-            world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-            t->pos.y = cheapest_path->coordinate.y;
-            t->pos.x = cheapest_path->coordinate.x;
-            world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-            t->next_turn = t->next_turn + cheapest_path->terrain.cost;
-        } else if (t->type == rival) {
-            cheapest_path = &world->rival_path[t->pos.y - 1][t->pos.x - 1];
-
-            dijkstra_path(path_heap, world->current_map, world->rival_path, rival);
-
-            if (world->rival_path[t->pos.y - 1][t->pos.x].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y - 1][t->pos.x];
-            }
-            if (world->rival_path[t->pos.y - 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y - 1][t->pos.x + 1];
-            }
-            if (world->rival_path[t->pos.y][t->pos.x - 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y][t->pos.x - 1];
-            }
-            if (world->rival_path[t->pos.y][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y][t->pos.x + 1];
-            }
-            if (world->rival_path[t->pos.y + 1][t->pos.x - 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y + 1][t->pos.x - 1];
-            }
-            if (world->rival_path[t->pos.y + 1][t->pos.x].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y + 1][t->pos.x];
-            }
-            if (world->rival_path[t->pos.y + 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                cheapest_path = &world->rival_path[t->pos.y + 1][t->pos.x + 1];
-            }
-            if (cheapest_path->cost == 0) {
-                cheapest_path = &world->rival_path[t->pos.y    ][t->pos.x    ];
-            }
-
-            world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-            t->pos.y = cheapest_path->coordinate.y;
-            t->pos.x = cheapest_path->coordinate.x;
-            world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-            t->next_turn = t->next_turn + cheapest_path->terrain.cost;
-        } else if (t->type == sentry) {
-            t->next_turn = t->next_turn + 15;
-        } else if (t->type == pacer) { // add a vector, check terrain map, adjust as needed
-            current_terrain = world->current_map->terrain[t->pos.y][t->pos.x];
-
-            // Just starting or moving right and the right is open
-            if (t->dir.x >= 0 && world->current_map->terrain[t->pos.y][t->pos.x + 1] == current_terrain) {
-                t->dir.x = 1;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.x++;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                // Just starting or moving left and checking if left is open
-            } else if (t->dir.x <= 0 && world->current_map->terrain[t->pos.y][t->pos.x - 1] == current_terrain) {
-                t->dir.x = -1;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.x--;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                // moving left but need to go back right
-            } else if (t->dir.x == -1 && world->current_map->terrain[t->pos.y][t->pos.x + 1] == current_terrain) {
-                t->dir.x = 1;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.x++;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                // moving right but need to go back left
-            } else if (t->dir.x == 1 && world->current_map->terrain[t->pos.y][t->pos.x - 1] == current_terrain) { // go back left
-                t->dir.x = -1;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.x--;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-            }
-
-            t->next_turn = t->next_turn + get_terrain_cost(world->current_map->terrain[t->pos.y][t->pos.x], t->type);
-        } else if (t->type == wanderer || t->type == explorer) {
-            current_terrain = world->current_map->terrain[t->pos.y][t->pos.x];
-
-            // just starting or already going up and need to continue
-            if (t->dir.x == 0 && t->dir.y <= 0) {
-                move_cost = get_terrain_cost(world->current_map->terrain[t->pos.y - 1][t->pos.x], explorer);
-
-                if ((t->type == wanderer && (current_terrain == world->current_map->terrain[t->pos.y - 1][t->pos.x])) ||
-                    (t->type == explorer && (move_cost != INT_MAX))) {
-                    t->dir.y = -1;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                    t->pos.y--;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                } else {
-                    random_turn(world->current_map, t);
-                }
-                // just starting or already going right and need to continue
-            } else if (t->dir.x >= 0 && t->dir.y == 0) {
-                move_cost = get_terrain_cost(world->current_map->terrain[t->pos.y][t->pos.x + 1], explorer);
-
-                if ((t->type == wanderer && (current_terrain == world->current_map->terrain[t->pos.y][t->pos.x + 1])) ||
-                    (t->type == explorer && (move_cost != INT_MAX))) {
-                    t->dir.x = 1;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                    t->pos.x--;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                } else {
-                    random_turn(world->current_map, t);
-                }
-                // just starting or already going down and need to continue
-            } else if (t->dir.x == 0 && t->dir.y >= 0) {
-                move_cost = get_terrain_cost(world->current_map->terrain[t->pos.y + 1][t->pos.x], explorer);
-
-                if ((t->type == wanderer && (current_terrain == world->current_map->terrain[t->pos.y + 1][t->pos.x])) ||
-                    (t->type == explorer && (move_cost != INT_MAX))) {
-                    t->dir.y = 1;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                    t->pos.y++;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                } else {
-                    random_turn(world->current_map, t);
-                }
-                // just starting or already going left and need to continue
-            } else if (t->dir.x <= 0 && t->dir.y == 0) {
-                move_cost = get_terrain_cost(world->current_map->terrain[t->pos.y    ][t->pos.x - 1], explorer);
-
-                if ((t->type == wanderer && (current_terrain == world->current_map->terrain[t->pos.y    ][t->pos.x - 1])) ||
-                    (t->type == explorer && (move_cost != INT_MAX))) {
-                    t->dir.x = -1;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                    t->pos.x--;
-                    world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                } else {
-                    random_turn(world->current_map, t);
-                }
-            }
-
-            t->next_turn = t->next_turn + get_terrain_cost(world->current_map->terrain[t->pos.y][t->pos.x], t->type);
-        } else if (t->type == swimmer) {
-            // path to pc
-            if ((world->current_map->terrain[pc_pos.y - 1][pc_pos.x    ] == water ||
-                 world->current_map->terrain[pc_pos.y - 1][pc_pos.x    ] == bridge) ||
-                (world->current_map->terrain[pc_pos.y    ][pc_pos.x + 1] == water ||
-                 world->current_map->terrain[pc_pos.y    ][pc_pos.x + 1] == bridge) ||
-                (world->current_map->terrain[pc_pos.y + 1][pc_pos.x    ] == water ||
-                 world->current_map->terrain[pc_pos.y + 1][pc_pos.x    ] == bridge) ||
-                (world->current_map->terrain[pc_pos.y    ][pc_pos.x - 1] == water ||
-                 world->current_map->terrain[pc_pos.y    ][pc_pos.x - 1] == bridge)) {
-                dijkstra_path(path_heap, world->current_map, swimmer_path, swimmer);
-                cheapest_path = &world->hiker_path[t->pos.y - 1][t->pos.x - 1];
-
-                if (swimmer_path[t->pos.y - 1][t->pos.x].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y - 1][t->pos.x];
-                }
-                if (swimmer_path[t->pos.y - 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y - 1][t->pos.x + 1];
-                }
-                if (swimmer_path[t->pos.y][t->pos.x - 1].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y][t->pos.x - 1];
-                }
-                if (swimmer_path[t->pos.y][t->pos.x + 1].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y][t->pos.x + 1];
-                }
-                if (swimmer_path[t->pos.y + 1][t->pos.x - 1].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y + 1][t->pos.x - 1];
-                }
-                if (swimmer_path[t->pos.y + 1][t->pos.x].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y + 1][t->pos.x];
-                }
-                if (swimmer_path[t->pos.y + 1][t->pos.x + 1].cost < cheapest_path->cost) {
-                    cheapest_path = &swimmer_path[t->pos.y + 1][t->pos.x + 1];
-                }
-                if (cheapest_path->cost == 0) {
-                    cheapest_path = &world->rival_path[t->pos.y    ][t->pos.x    ];
-                }
-
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.y = cheapest_path->coordinate.y;
-                t->pos.x = cheapest_path->coordinate.x;
-                world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                t->next_turn = t->next_turn + cheapest_path->terrain.cost;
-            // move like wanderer
-            } else {
-                // just starting or already going up and need to continue
-                if (t->dir.x == 0 && t->dir.y <= 0) {
-                    if (world->current_map->terrain[t->pos.y - 1][t->pos.x] == water ||
-                        world->current_map->terrain[t->pos.y - 1][t->pos.x] == bridge) {
-                        t->dir.y = -1;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.y--;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else {
-                        random_turn(world->current_map, t);
-                    }
-                // just starting or already going right and need to continue
-                } else if (t->dir.x >= 0 && t->dir.y == 0) {
-                    if (world->current_map->terrain[t->pos.y][t->pos.x + 1] == water ||
-                        world->current_map->terrain[t->pos.y][t->pos.x + 1] == bridge) {
-                        t->dir.x = 1;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.x++;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else {
-                        random_turn(world->current_map, t);
-                    }
-                    // just starting or already going down and need to continue
-                } else if (t->dir.x == 0 && t->dir.y >= 0) {
-                    if (world->current_map->terrain[t->pos.y + 1][t->pos.x] == water ||
-                        world->current_map->terrain[t->pos.y + 1][t->pos.x] == bridge) {
-                        t->dir.y = 1;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.y++;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                        // just starting or already going left and need to continue
-                    } else {
-                        random_turn(world->current_map, t);
-                    }
-                } else if (t->dir.x <= 0 && t->dir.y == 0) {
-                    if (world->current_map->terrain[t->pos.y][t->pos.x - 1] == water ||
-                        world->current_map->terrain[t->pos.y][t->pos.x - 1] == bridge) {
-                        t->dir.x = -1;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.x--;
-                        world->current_map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else {
-                        random_turn(world->current_map, t);
-                    }
-                }
-
-                t->next_turn = t->next_turn + get_terrain_cost(world->current_map->terrain[t->pos.y][t->pos.x], t->type);
-            }
+        switch (t->type) {
+            case pc:
+                quit_game = pc_turn(world->current_map, t);
+                break;
+            case hiker:
+                move_dijkstra_trainer(path_heap, world->hiker_path, world->current_map, t);
+                break;
+            case rival:
+                move_dijkstra_trainer(path_heap, world->rival_path, world->current_map, t);
+                break;
+            case pacer:
+                move_pacer(world->current_map, t);
+                break;
+            case wanderer:
+            case explorer:
+                move_wanderer_explorer(world->current_map, t);
+                break;
+            case sentry:
+                t->next_turn = t->next_turn + 15;
+                break;
+            case swimmer:
+                move_swimmer(path_heap, swimmer_path, world->current_map, t, world->current_map->pc_pos);
+                break;
         }
 
-        heap_insert(turn_heap, t);
-        print_view(world->current_map, world->view);
-        printf("(%d, %d)\n", world->location.x - START_X, START_Y - world->location.y);
-        usleep(250000);
+        render_view(world->current_map);
+
+        if (t->next_turn > -1) {
+            heap_insert(turn_heap, t);
+        }
+
+        if (world->current_map->trainer_map[world->current_map->pc_pos.y][world->current_map->pc_pos.x]->next_turn == -1) {
+            break;
+        }
     }
 }
 
@@ -520,14 +288,14 @@ void world_init(heap_t *turn_heap, world_t *world, int num_trainers)
             world->hiker_path[y][x].heap_node = NULL;
             world->hiker_path[y][x].coordinate.x = x;
             world->hiker_path[y][x].coordinate.y = y;
-            world->hiker_path[y][x].terrain.type = border;
+            world->hiker_path[y][x].terrain.type = edge;
             world->hiker_path[y][x].terrain.cost = INT_MAX;
             world->hiker_path[y][x].cost = INT_MAX;
 
             world->rival_path[y][x].heap_node = NULL;
             world->rival_path[y][x].coordinate.x = x;
             world->rival_path[y][x].coordinate.y = y;
-            world->rival_path[y][x].terrain.type = border;
+            world->rival_path[y][x].terrain.type = edge;
             world->rival_path[y][x].terrain.cost = INT_MAX;
             world->rival_path[y][x].cost = INT_MAX;
         }
@@ -542,15 +310,33 @@ void world_init(heap_t *turn_heap, world_t *world, int num_trainers)
     }
 }
 
+void world_delete(world_t *world)
+{
+    int x, y;
+
+    for (y = 0; y < WORLD_HEIGHT; y++) {
+        for (x = 0; x < WORLD_WIDTH; x++) {
+            map_delete(world->board[y][x]);
+        }
+    }
+
+    free(world);
+}
+
 int main(int argc, char *argv[])
 {
+    heap_t path_heap, turn_heap;
+    world_t *world;
+
     srand(time(NULL));
 
-    heap_t path_heap, turn_heap;
+    init_terminal();
+
+    init_view();
+
     heap_init(&path_heap, path_cmp, NULL);
     heap_init(&turn_heap, turn_cmp, NULL);
 
-    world_t *world;
     world = malloc(sizeof (*world));
     if (argc == 3) {
         if (!strcmp(argv[1], "--numtrainers")) {
@@ -568,13 +354,15 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    print_view(world->current_map, world->view);
-    printf("(%d, %d)\n", world->location.x - START_X, START_Y - world->location.y);
-
-    dijkstra_path(&path_heap, world->current_map, world->hiker_path, hiker);
-    dijkstra_path(&path_heap, world->current_map, world->rival_path, rival);
-
     game_loop(&turn_heap, &path_heap, world);
+
+    endwin();
+
+    heap_delete(&path_heap);
+    heap_delete(&turn_heap);
+    world_delete(world);
+
+    printf("Thanks for playing!");
 
     return 0;
 }

@@ -32,7 +32,7 @@ void print_view(map_t *map, char view[MAP_HEIGHT][MAP_WIDTH + 1])
                 case boulder:
                     view[y][x] = '%';
                     break;
-                case border:
+                case edge:
                     view[y][x] = '%';
                     break;
                 case tree:
@@ -225,7 +225,7 @@ void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
             swimmer_path[y][x].heap_node = NULL;
             swimmer_path[y][x].coordinate.x = x;
             swimmer_path[y][x].coordinate.y = y;
-            swimmer_path[y][x].terrain.type = border;
+            swimmer_path[y][x].terrain.type = edge;
             swimmer_path[y][x].terrain.cost = INT_MAX;
             swimmer_path[y][x].cost = INT_MAX;
         }
@@ -520,14 +520,14 @@ void world_init(heap_t *turn_heap, world_t *world, int num_trainers)
             world->hiker_path[y][x].heap_node = NULL;
             world->hiker_path[y][x].coordinate.x = x;
             world->hiker_path[y][x].coordinate.y = y;
-            world->hiker_path[y][x].terrain.type = border;
+            world->hiker_path[y][x].terrain.type = edge;
             world->hiker_path[y][x].terrain.cost = INT_MAX;
             world->hiker_path[y][x].cost = INT_MAX;
 
             world->rival_path[y][x].heap_node = NULL;
             world->rival_path[y][x].coordinate.x = x;
             world->rival_path[y][x].coordinate.y = y;
-            world->rival_path[y][x].terrain.type = border;
+            world->rival_path[y][x].terrain.type = edge;
             world->rival_path[y][x].terrain.cost = INT_MAX;
             world->rival_path[y][x].cost = INT_MAX;
         }

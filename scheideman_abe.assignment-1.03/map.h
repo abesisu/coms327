@@ -11,7 +11,7 @@ typedef enum {
     grass,
     tall_grass,
     boulder,
-    border,
+    edge,
     tree,
     willow,
     water,

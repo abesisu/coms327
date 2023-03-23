@@ -227,10 +227,10 @@ void generate_terrain(map_t *map)
     }
 }
 
-/* Fill in the border of the given map with boulders and gates. */
+/* Fill in the edge of the given map with boulders and gates. */
 void construct_border(map_t *map)
 {
-    // First make boulders the entire border, then randomly pick the 4 gates.
+    // First make boulders the entire edge, then randomly pick the 4 gates.
     int i, j;
 
     for (i = 0; i < HEIGHT; i++) {

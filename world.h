@@ -1,7 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "path.h"
+#include "action.h"
 
 typedef struct world {
     map_t *board[WORLD_HEIGHT][WORLD_WIDTH];
@@ -15,5 +15,7 @@ typedef struct world {
 } world_t;
 
 void world_init(heap_t *turn_heap, world_t *world, int num_trainers);
+
+void world_delete(world_t *world);
 
 #endif

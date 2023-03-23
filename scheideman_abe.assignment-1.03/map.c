@@ -317,7 +317,7 @@ void generate_terrain(map_t *map)
         row = rand() % (MAP_HEIGHT - 2) + 1;
         col = rand() % (MAP_WIDTH - 2) + 1;
 
-        map->terrain[row][col] = border;
+        map->terrain[row][col] = edge;
 
         row = rand() % (MAP_HEIGHT - 2) + 1;
         col = rand() % (MAP_WIDTH - 2) + 1;
@@ -326,20 +326,20 @@ void generate_terrain(map_t *map)
     }
 }
 
-/* Fill in the border of the given map with borders and gates. */
+/* Fill in the edge of the given map with borders and gates. */
 void construct_border(map_t *map, int n, int s, int w, int e)
 {
-    // First make the entire border, then place the 4 gates
+    // First make the entire edge, then place the 4 gates
     int i, j;
 
     for (i = 0; i < MAP_HEIGHT; i++) {
-        map->terrain[i][0] = border;
-        map->terrain[i][MAP_WIDTH - 1] = border;
+        map->terrain[i][0] = edge;
+        map->terrain[i][MAP_WIDTH - 1] = edge;
     }
 
     for (j = 0; j < MAP_WIDTH; j++) {
-        map->terrain[0][j] = border;
-        map->terrain[MAP_HEIGHT - 1][j] = border;
+        map->terrain[0][j] = edge;
+        map->terrain[MAP_HEIGHT - 1][j] = edge;
     }
 
     // 0 means generate a gate
@@ -349,10 +349,10 @@ void construct_border(map_t *map, int n, int s, int w, int e)
     map->e = (e == 0) ? rand() % (MAP_HEIGHT - 2) + 1 : e;
 
     // -1 means don't generate a gate
-    map->terrain[0][map->n] = (n == -1) ? border : gate;
-    map->terrain[MAP_HEIGHT - 1][map->s] = (s == -1) ? border : gate;
-    map->terrain[map->w][0] = (w == -1) ? border : gate;
-    map->terrain[map->e][MAP_WIDTH - 1] = (e == -1) ? border : gate;
+    map->terrain[0][map->n] = (n == -1) ? edge : gate;
+    map->terrain[MAP_HEIGHT - 1][map->s] = (s == -1) ? edge : gate;
+    map->terrain[map->w][0] = (w == -1) ? edge : gate;
+    map->terrain[map->e][MAP_WIDTH - 1] = (e == -1) ? edge : gate;
 }
 
 /* Take the given map and populate it with the necessary types of terrain, roads, and buildings. */

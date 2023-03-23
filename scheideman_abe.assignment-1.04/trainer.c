@@ -7,8 +7,8 @@ int check_trainer_position(map_t *map, coordinate_t pos, trainer_type_e type)
 {
     int check = 1;
 
-    if (map->terrain[pos.y][pos.x] == border     ||
-        map->terrain[pos.y][pos.x] == willow     ||
+    if (map->terrain[pos.y][pos.x] == edge ||
+        map->terrain[pos.y][pos.x] == willow ||
         map->trainer_map[pos.y][pos.x] != NULL) {
         check = 0;
     } else if ((type == swimmer && map->terrain[pos.y][pos.x] != water) ||

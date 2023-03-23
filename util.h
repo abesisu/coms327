@@ -1,5 +1,5 @@
-#ifndef COMS327_UTIL_H
-#define COMS327_UTIL_H
+#ifndef UTIL_H
+#define UTIL_H
 
 #define WORLD_WIDTH 401
 #define WORLD_HEIGHT 401
@@ -13,4 +13,4 @@ typedef struct coordinate {
     int y;
 } coordinate_t;
 
-#endif //COMS327_UTIL_H
+#endif
