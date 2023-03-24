@@ -317,7 +317,9 @@ void world_delete(world_t *world)
 
     for (y = 0; y < WORLD_HEIGHT; y++) {
         for (x = 0; x < WORLD_WIDTH; x++) {
-            map_delete(world->board[y][x]);
+            if (world->board[y][x] != NULL) {
+                map_delete(world->board[y][x]);
+            }
         }
     }
 
@@ -363,7 +365,7 @@ int main(int argc, char *argv[])
     heap_delete(&turn_heap);
     world_delete(world);
 
-    printf("Thanks for playing!");
+    printf("Thanks for playing!\n");
 
     return 0;
 }

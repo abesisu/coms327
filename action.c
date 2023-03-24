@@ -35,7 +35,7 @@ int check_random_turn(int random_direction, map_t *map, coordinate_t pos, traine
         }
     } else if (random_direction == 2) { // check down
         if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y + 1][pos.x] && map->trainer_map[pos.y][pos.x + 1] == NULL) {
+            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y + 1][pos.x] && map->trainer_map[pos.y + 1][pos.x] == NULL) {
                 check = 1;
             }
         } else if (type == explorer) {
@@ -46,7 +46,7 @@ int check_random_turn(int random_direction, map_t *map, coordinate_t pos, traine
         }
     }  else if (random_direction == 3) { // check left
         if (type == wanderer || type == swimmer) {
-            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y][pos.x - 1] && map->trainer_map[pos.y][pos.x + 1] == NULL) {
+            if (map->terrain[pos.y][pos.x] == map->terrain[pos.y][pos.x - 1] && map->trainer_map[pos.y][pos.x - 1] == NULL) {
                 check = 1;
             }
         } else if (type == explorer) {
@@ -63,6 +63,7 @@ int check_random_turn(int random_direction, map_t *map, coordinate_t pos, traine
 void random_turn(map_t *map, trainer_t *t) {
     int random_direction, valid_direction;
     int num_fail;
+    int battle_outcome;
 
     num_fail = 0;
     random_direction = rand() % 4;
@@ -79,27 +80,75 @@ void random_turn(map_t *map, trainer_t *t) {
     if (random_direction == 0) { // GO UP
         t->dir.y = -1;
         t->dir.x = 0;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.y--;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
+        if (map->trainer_map[t->pos.y - 1][t->pos.x    ] != NULL &&
+            map->trainer_map[t->pos.y - 1][t->pos.x    ]->type == pc) {
+            battle_outcome = battle();
+
+            if (battle_outcome == 1) { // npc won
+                map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                random_turn(map, t);
+            } else if (battle_outcome == -1) { // npc lost
+                t->next_turn = -1;
+            }
+        } else {
+            map->trainer_map[t->pos.y][t->pos.x] = NULL;
+            t->pos.y--;
+            map->trainer_map[t->pos.y][t->pos.x] = t;
+        }
     } else if (random_direction == 1) { // go right
         t->dir.y = 0;
         t->dir.x = 1;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.x++;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
+        if (map->trainer_map[t->pos.y    ][t->pos.x + 1] != NULL &&
+            map->trainer_map[t->pos.y    ][t->pos.x + 1]->type == pc) {
+            battle_outcome = battle();
+
+            if (battle_outcome == 1) { // npc won
+                map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                random_turn(map, t);
+            } else if (battle_outcome == -1) { // npc lost
+                t->next_turn = -1;
+            }
+        } else {
+            map->trainer_map[t->pos.y][t->pos.x] = NULL;
+            t->pos.x++;
+            map->trainer_map[t->pos.y][t->pos.x] = t;
+        }
     } else if (random_direction == 2) { // go down
         t->dir.y = 1;
         t->dir.x = 0;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.y++;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
+        if (map->trainer_map[t->pos.y + 1][t->pos.x    ] != NULL &&
+            map->trainer_map[t->pos.y + 1][t->pos.x    ]->type == pc) {
+            battle_outcome = battle();
+
+            if (battle_outcome == 1) { // npc won
+                map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                random_turn(map, t);
+            } else if (battle_outcome == -1) { // npc lost
+                t->next_turn = -1;
+            }
+        } else {
+            map->trainer_map[t->pos.y][t->pos.x] = NULL;
+            t->pos.y++;
+            map->trainer_map[t->pos.y][t->pos.x] = t;
+        }
     } else if (random_direction == 3) { // go left
         t->dir.y = 0;
         t->dir.x = -1;
-        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-        t->pos.x--;
-        map->trainer_map[t->pos.y][t->pos.x] = t;
+        if (map->trainer_map[t->pos.y    ][t->pos.x - 1] != NULL &&
+            map->trainer_map[t->pos.y    ][t->pos.x - 1]->type == pc) {
+            battle_outcome = battle();
+
+            if (battle_outcome == 1) { // npc won
+                map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                random_turn(map, t);
+            } else if (battle_outcome == -1) { // npc lost
+                t->next_turn = -1;
+            }
+        } else {
+            map->trainer_map[t->pos.y][t->pos.x] = NULL;
+            t->pos.x--;
+            map->trainer_map[t->pos.y][t->pos.x] = t;
+        }
     }
 }
 
@@ -168,7 +217,7 @@ void trainer_info(map_t *map)
     WINDOW *trainer_win;
     char *trainer_info[map->num_trainers];
 
-    trainer_win = create_newwin(21, 24, 1, 0);
+    trainer_win = create_newwin(10, 24, 1, 0);
     i = 0;
     keypad(trainer_win, TRUE);
 
@@ -239,27 +288,26 @@ void trainer_info(map_t *map)
         switch (key)
         {
             case KEY_DOWN:
-                if (i == 10 + shift && map->num_trainers > 10) {
-                    for (i = shift; i < map->num_trainers || i < 10 + shift; i++) {
-                        mvwprintw(trainer_win, i, 0, trainer_info[i]);
-                    }
+                if (map->num_trainers > 10 && map->num_trainers - shift > 10) {
                     shift++;
+                    for (i = 0; i < 10 && i + shift < map->num_trainers; i++) {
+                        mvwprintw(trainer_win, i, 0, trainer_info[i + shift]);
+                    }
                     wrefresh(trainer_win);
                 }
                 break;
             case KEY_UP:
                 if (shift > 0 && map->num_trainers > 10) {
-                    for (i = shift; i < map->num_trainers || i < 10 + shift; i++) {
-                        mvwprintw(trainer_win, i, 0, trainer_info[i]);
-                    }
                     shift--;
+                    for (i = 0; i < 10 && i + shift < map->num_trainers; i++) {
+                        mvwprintw(trainer_win, i, 0, trainer_info[i + shift]);
+                    }
                     wrefresh(trainer_win);
                 }
                 break;
             default:
                 continue;
         }
-
     }
 
     for (i = 0; i < map->num_trainers; i++) {
@@ -439,7 +487,7 @@ void move_wanderer_explorer(map_t *map, trainer_t *t)
             t->dir.x = 1;
             if (map->trainer_map[t->pos.y    ][t->pos.x + 1] == NULL) {
                 map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                t->pos.x--;
+                t->pos.x++;
                 map->trainer_map[t->pos.y][t->pos.x] = t;
             }  else if (map->trainer_map[t->pos.y    ][t->pos.x + 1]->type == pc) {
                 battle_outcome = battle();
@@ -552,83 +600,85 @@ void move_swimmer(heap_t *path_heap, path_t path[MAP_HEIGHT][MAP_WIDTH], map_t *
                 } else {
                     random_turn(map, t);
                 }
-                // just starting or already going right and need to continue
-            } else if (t->dir.x >= 0 && t->dir.y == 0) {
-                if (map->terrain[t->pos.y][t->pos.x + 1] == water ||
-                    map->terrain[t->pos.y][t->pos.x + 1] == bridge) {
-                    t->dir.x = 1;
-                    if (map->trainer_map[t->pos.y][t->pos.x + 1] == NULL) {
-                        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.x--;
-                        map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else if (map->trainer_map[t->pos.y][t->pos.x + 1]->type == pc) {
-                        battle_outcome = battle();
-
-                        if (battle_outcome == 1) { // npc won
-                            map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
-                            random_turn(map, t);
-                        } else if (battle_outcome == -1) { // npc lost
-                            t->next_turn = -1;
-                        }
-                    } else {
-                        random_turn(map, t);
-                    }
-                } else {
-                    random_turn(map, t);
-                }
-                // just starting or already going down and need to continue
-            } else if (t->dir.x == 0 && t->dir.y >= 0) {
-                if (map->terrain[t->pos.y + 1][t->pos.x] == water ||
-                    map->terrain[t->pos.y + 1][t->pos.x] == bridge) {
-                    t->dir.y = 1;
-                    if (map->trainer_map[t->pos.y + 1][t->pos.x] == NULL) {
-                        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.y++;
-                        map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else if (map->trainer_map[t->pos.y + 1][t->pos.x]->type == pc) {
-                        battle_outcome = battle();
-
-                        if (battle_outcome == 1) { // npc won
-                            map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
-                            random_turn(map, t);
-                        } else if (battle_outcome == -1) { // npc lost
-                            t->next_turn = -1;
-                        }
-                    } else {
-                        random_turn(map, t);
-                    }
-                } else {
-                    random_turn(map, t);
-                }
-                // just starting or already going left and need to continue
-            } else if (t->dir.x <= 0 && t->dir.y == 0) {
-                if (map->terrain[t->pos.y][t->pos.x - 1] == water ||
-                    map->terrain[t->pos.y][t->pos.x - 1] == bridge) {
-                    t->dir.x = -1;
-                    if (map->trainer_map[t->pos.y][t->pos.x - 1] == NULL) {
-                        map->trainer_map[t->pos.y][t->pos.x] = NULL;
-                        t->pos.x--;
-                        map->trainer_map[t->pos.y][t->pos.x] = t;
-                    } else if (map->trainer_map[t->pos.y][t->pos.x - 1]->type == pc) {
-                        battle_outcome = battle();
-
-                        if (battle_outcome == 1) { // npc won
-                            map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
-                            random_turn(map, t);
-                        } else if (battle_outcome == -1) { // npc lost
-                            t->next_turn = -1;
-                        }
-                    } else {
-                        random_turn(map, t);
-                    }
-                } else {
-                    random_turn(map, t);
-                }
+            } else {
+                random_turn(map, t);
             }
+            // just starting or already going right and need to continue
+        } else if (t->dir.x >= 0 && t->dir.y == 0) {
+            if (map->terrain[t->pos.y][t->pos.x + 1] == water ||
+                map->terrain[t->pos.y][t->pos.x + 1] == bridge) {
+                t->dir.x = 1;
+                if (map->trainer_map[t->pos.y][t->pos.x + 1] == NULL) {
+                    map->trainer_map[t->pos.y][t->pos.x] = NULL;
+                    t->pos.x++;
+                    map->trainer_map[t->pos.y][t->pos.x] = t;
+                } else if (map->trainer_map[t->pos.y][t->pos.x + 1]->type == pc) {
+                    battle_outcome = battle();
 
-            if (t->next_turn > -1) {
-                t->next_turn = t->next_turn + get_terrain_cost(map->terrain[t->pos.y][t->pos.x], t->type);
+                    if (battle_outcome == 1) { // npc won
+                        map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                        random_turn(map, t);
+                    } else if (battle_outcome == -1) { // npc lost
+                        t->next_turn = -1;
+                    }
+                } else {
+                    random_turn(map, t);
+                }
+            } else {
+                random_turn(map, t);
             }
+            // just starting or already going down and need to continue
+        } else if (t->dir.x == 0 && t->dir.y >= 0) {
+            if (map->terrain[t->pos.y + 1][t->pos.x] == water ||
+                map->terrain[t->pos.y + 1][t->pos.x] == bridge) {
+                t->dir.y = 1;
+                if (map->trainer_map[t->pos.y + 1][t->pos.x] == NULL) {
+                    map->trainer_map[t->pos.y][t->pos.x] = NULL;
+                    t->pos.y++;
+                    map->trainer_map[t->pos.y][t->pos.x] = t;
+                } else if (map->trainer_map[t->pos.y + 1][t->pos.x]->type == pc) {
+                    battle_outcome = battle();
+
+                    if (battle_outcome == 1) { // npc won
+                        map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                        random_turn(map, t);
+                    } else if (battle_outcome == -1) { // npc lost
+                        t->next_turn = -1;
+                    }
+                } else {
+                    random_turn(map, t);
+                }
+            } else {
+                random_turn(map, t);
+            }
+            // just starting or already going left and need to continue
+        } else if (t->dir.x <= 0 && t->dir.y == 0) {
+            if (map->terrain[t->pos.y][t->pos.x - 1] == water ||
+                map->terrain[t->pos.y][t->pos.x - 1] == bridge) {
+                t->dir.x = -1;
+                if (map->trainer_map[t->pos.y][t->pos.x - 1] == NULL) {
+                    map->trainer_map[t->pos.y][t->pos.x] = NULL;
+                    t->pos.x--;
+                    map->trainer_map[t->pos.y][t->pos.x] = t;
+                } else if (map->trainer_map[t->pos.y][t->pos.x - 1]->type == pc) {
+                    battle_outcome = battle();
+
+                    if (battle_outcome == 1) { // npc won
+                        map->trainer_map[map->pc_pos.y][map->pc_pos.x]->next_turn = -1;
+                        random_turn(map, t);
+                    } else if (battle_outcome == -1) { // npc lost
+                        t->next_turn = -1;
+                    }
+                } else {
+                    random_turn(map, t);
+                }
+            } else {
+                random_turn(map, t);
+            }
+        }
+
+        if (t->next_turn > -1) {
+            t->next_turn = t->next_turn + get_terrain_cost(map->terrain[t->pos.y][t->pos.x], t->type);
         }
     }
 }
