@@ -379,13 +379,13 @@ void move_pc(map_t *map, trainer_t *pc, int input)
                     map->trainer_map[new_pos.y][new_pos.x]->next_turn = -1;
                 }
             }
+        } else {
+            map->trainer_map[pc->pos.y][pc->pos.x] = NULL;
+            pc->pos.y = new_pos.y;
+            pc->pos.x = new_pos.x;
+            map->trainer_map[pc->pos.y][pc->pos.x] = pc;
+            map->pc_pos = pc->pos;
         }
-
-        map->trainer_map[pc->pos.y][pc->pos.x] = NULL;
-        pc->pos.y = new_pos.y;
-        pc->pos.x = new_pos.x;
-        map->trainer_map[pc->pos.y][pc->pos.x] = pc;
-        map->pc_pos = pc->pos;
 
         if (pc->next_turn > -1) {
             pc->next_turn = pc->next_turn + get_terrain_cost(map->terrain[pc->pos.y][pc->pos.x], pc->type);
