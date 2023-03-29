@@ -455,12 +455,12 @@ int check_trainer_position(map_t *map, coordinate_t pos, trainer_type_e type)
 }
 
 /* Add the PC to a road in this map. */
-void place_pc(heap_t *turn_heap, map_t *map)
+void place_new_pc(heap_t *turn_heap, map_t *map)
 {
     int y, x, count;
     count = 0;
 
-    // loop through the world once counting all the roads
+    // loop through the map once counting all the roads
     for (y = 1; y < MAP_HEIGHT; y++) {
         for (x = 1; x < MAP_WIDTH; x++) {
             if (map->terrain[y][x] == road || map->terrain[y][x] == bridge) {
@@ -493,6 +493,37 @@ void place_pc(heap_t *turn_heap, map_t *map)
 
     map->trainer_map[start.y][start.x]->pos = start;
     heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
+}
+
+void place_pc(map_t *map, trainer_t *pc)
+{
+    int y, x, count;
+    count = 0;
+
+    // loop through the map once counting all the roads
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road || map->terrain[y][x] == bridge) {
+                count++;
+            }
+        }
+    }
+
+    coordinate_t start_options[count]; // create an array of the size of the number of roads
+
+    // Add the coordinates of each road to the array
+    count = 0;
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road || map->terrain[y][x] == bridge) {
+                start_options[count].x = x;
+                start_options[count].y = y;
+                count++;
+            }
+        }
+    }
+
+    pc->pos = start_options[rand() % count];
 }
 
 void place_npc(heap_t *turn_heap, map_t *map, trainer_type_e type)
@@ -533,7 +564,7 @@ void trainer_map_init(map_t *map, int num_trainers, trainer_t *pc)
     }
 
     if (pc == NULL) {
-        place_pc(map->turn_heap, map);
+        place_new_pc(map->turn_heap, map);
     } else {
         map->trainer_map[pc->pos.y][pc->pos.x] = pc;
         map->pc_pos = pc->pos;

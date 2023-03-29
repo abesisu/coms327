@@ -30,7 +30,7 @@ int check_trainer_position(map_t *map, coordinate_t pos, trainer_type_e type)
 }
 
 /* Add the PC to a road in this map. */
-void place_pc(heap_t *turn_heap, map_t *map)
+void place_new_pc(heap_t *turn_heap, map_t *map)
 {
     int y, x, count;
     count = 0;
@@ -145,7 +145,7 @@ void trainer_map_init(heap_t *turn_heap, map_t *map, int num_trainers)
         }
     }
 
-    place_pc(turn_heap, map);
+    place_new_pc(turn_heap, map);
 
     if (num_trainers == 1) {
         place_npc(turn_heap, map, rand() % 7 + 1);

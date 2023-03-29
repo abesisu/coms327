@@ -41,7 +41,7 @@ void init_view()
     }
 }
 
-void render_view(map_t *map)
+void render_view(map_t *map, coordinate_t location)
 {
     int y, x;
     int color;
@@ -133,6 +133,8 @@ void render_view(map_t *map)
         }
     }
 
+    mvprintw(22, 1, "(%d, %d)", location.x - START_X, START_Y - location.y);
+
     refresh();
 }
 
@@ -173,6 +175,7 @@ void place_gates(world_t *world)
 
 void change_map(world_t *world, trainer_t *pc, char new_map)
 {
+    int fly_x, fly_y;
     int manhattan_distance;
 
     world->current_map->trainer_map[pc->pos.y][pc->pos.x] = NULL;
@@ -190,6 +193,19 @@ void change_map(world_t *world, trainer_t *pc, char new_map)
     } else if (new_map == 'e' && world->location.x < WORLD_WIDTH - 1) {
         world->location.x++;
         pc->pos.x = 1;
+    } else if (new_map == 'f') {
+        mvprintw(22, 1, "Fly to: ");
+        refresh();
+        echo();
+        scanw("%d %d", &fly_x, &fly_y);
+        noecho();
+        if (fly_x >= -1 * WORLD_WIDTH / 2 && fly_x <= WORLD_WIDTH / 2) {
+            world->location.x = START_X + fly_x;
+        }
+
+        if (fly_y >= -1 * WORLD_HEIGHT / 2 && fly_y <= WORLD_HEIGHT / 2) {
+            world->location.y = START_Y - fly_y;
+        }
     }
 
     if (world->board[world->location.y][world->location.x] == NULL) {
@@ -200,7 +216,14 @@ void change_map(world_t *world, trainer_t *pc, char new_map)
         place_gates(world);
         manhattan_distance = abs(world->location.x - START_X) + abs(world->location.y - START_Y);
         generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, manhattan_distance);
+
+        if (new_map == 'f') {
+            place_pc(world->current_map, pc);
+        }
         trainer_map_init(world->current_map, world->num_trainers, pc); // init trainer_map, pc_pos, and turn_heap
+    } else if (new_map == 'f') {
+        world->board[world->location.y][world->location.x]->trainer_map[pc->pos.y][pc->pos.x] = NULL;
+        place_pc(world->board[world->location.y][world->location.x], pc);
     }
 
     world->current_map = world->board[world->location.y][world->location.x];
@@ -240,7 +263,9 @@ int pc_turn(world_t *world, trainer_t *pc)
                 valid = 1;
                 break;
             case 'f':
-                // add flying functionality
+                new_map = 'f';
+                valid = 1;
+                break;
             case '5':
             case ' ':
             case '.':
@@ -253,7 +278,7 @@ int pc_turn(world_t *world, trainer_t *pc)
                 break;
             case 't':
                 trainer_info(world->current_map, world->num_trainers);
-                render_view(world->current_map);
+                render_view(world->current_map, world->location);
                 valid = 0;
                 continue;
             case 'Q':
@@ -261,8 +286,7 @@ int pc_turn(world_t *world, trainer_t *pc)
                 valid = 1;
                 break;
             default:
-                mvprintw(22, 1,
-                         "Use movement keys, info key, or 'Q' to quit.");
+                mvprintw(22, 1, "Use movement keys, info key, or 'Q' to quit.");
                 valid = 0;
         }
     }
@@ -297,7 +321,7 @@ void game_loop(heap_t *path_heap, world_t *world)
         }
     }
 
-    render_view(world->current_map);
+    render_view(world->current_map, world->location);
 
     while (!quit_game) {
         t = heap_remove_min(world->current_map->turn_heap);
@@ -327,7 +351,7 @@ void game_loop(heap_t *path_heap, world_t *world)
                 break;
         }
 
-        render_view(world->current_map);
+        render_view(world->current_map, world->location);
 
         if (t->next_turn > -1) {
             heap_insert(world->current_map->turn_heap, t);
