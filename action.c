@@ -412,11 +412,6 @@ char move_pc(map_t *map, trainer_t *pc, int input)
     return ret_val;
 }
 
-void fly_pc(world_t)
-{
-
-}
-
 void move_dijkstra_trainer(heap_t *path_heap, path_t path[MAP_HEIGHT][MAP_WIDTH], map_t *map, trainer_t *t)
 {
     path_t *cheapest_path;
