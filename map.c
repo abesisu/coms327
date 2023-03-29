@@ -3,6 +3,11 @@
 #include "map.h"
 #include "trainer.h"
 
+static int32_t turn_cmp(const void *key, const void *with) { // make heap compare turns
+    int32_t next_turn = ((trainer_t *) key)->next_turn - ((trainer_t *) with)->next_turn;
+    return (next_turn == 0) ? ((trainer_t *) key)->seq_num - ((trainer_t *) with)->seq_num : next_turn;
+}
+
 void build_bridges(map_t *map)
 {
     int x, y;
@@ -393,13 +398,14 @@ void generate_map(map_t *map, int n, int s, int w, int e, int manhattan_distance
     build_bridges(map);
 }
 
-void map_init(heap_t *turn_heap, map_t *map, int num_trainers)
+void map_init(map_t *map)
 {
     int x, y;
 
     for (y = 0; y < MAP_HEIGHT; y++) {
         for (x = 0; x < MAP_WIDTH; x++) {
             map->terrain[y][x] = grass;
+            map->trainer_map[y][x] = NULL;
         }
     }
 
@@ -408,15 +414,151 @@ void map_init(heap_t *turn_heap, map_t *map, int num_trainers)
     map->w = 0;
     map->e = 0;
 
-    generate_map(map, map->n, map->s, map->w, map->e, 0);
-
-    map->num_trainers = num_trainers;
-
-    trainer_map_init(turn_heap, map, num_trainers);
+    map->turn_heap = NULL;
+    map->pc_turn = 0;
+    map->pc_pos.y = 0;
+    map->pc_pos.x = 0;
 }
 
 void map_delete(map_t *map)
 {
-    trainer_delete(map);
+    heap_delete(map->turn_heap);
+    free(map->turn_heap);
     free(map);
+}
+
+/* Check if trainer can go to location based on terrain and if it is occupied or not. Return 0 if trainer can be at location. */
+int check_trainer_position(map_t *map, coordinate_t pos, trainer_type_e type)
+{
+    int check = 1;
+
+    if (map->terrain[pos.y][pos.x] == edge ||
+        map->terrain[pos.y][pos.x] == willow ||
+        map->trainer_map[pos.y][pos.x] != NULL) {
+        check = 0;
+    } else if ((type == swimmer && map->terrain[pos.y][pos.x] != water) ||
+               (type != swimmer && map->terrain[pos.y][pos.x] == water)) {
+        check = 0;
+    } else if (map->terrain[pos.y][pos.x] == boulder ||
+               map->terrain[pos.y][pos.x] == tree) {
+        if (type != hiker) {
+            check = 0;
+        }
+    } else if ((map->terrain[pos.y][pos.x] == gate ||
+                map->terrain[pos.y][pos.x] == road ||
+                map->terrain[pos.y][pos.x] == bridge) &&
+               (type != pc)) {
+        check = 0;
+    }
+
+    return check;
+}
+
+/* Add the PC to a road in this map. */
+void place_pc(heap_t *turn_heap, map_t *map)
+{
+    int y, x, count;
+    count = 0;
+
+    // loop through the world once counting all the roads
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road || map->terrain[y][x] == bridge) {
+                count++;
+            }
+        }
+    }
+
+    // create an array of the size of the number of roads
+    coordinate_t start;
+    coordinate_t start_options[count];
+
+    // Add the coordinates of each road to the array
+    count = 0;
+    for (y = 1; y < MAP_HEIGHT; y++) {
+        for (x = 1; x < MAP_WIDTH; x++) {
+            if (map->terrain[y][x] == road || map->terrain[y][x] == bridge) {
+                start_options[count].x = x;
+                start_options[count].y = y;
+                count++;
+            }
+        }
+    }
+
+    start = start_options[rand() % count];
+
+    map->trainer_map[start.y][start.x] = malloc(sizeof (trainer_t));
+    trainer_init(map->trainer_map[start.y][start.x], pc);
+    map->pc_pos = start;
+
+    map->trainer_map[start.y][start.x]->pos = start;
+    heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
+}
+
+void place_npc(heap_t *turn_heap, map_t *map, trainer_type_e type)
+{
+    coordinate_t start;
+    int valid_character_position;
+
+    start.x = (rand() % MAP_WIDTH - 2) + 1;
+    start.y = (rand() % MAP_HEIGHT - 2) + 1;
+
+    valid_character_position = check_trainer_position(map, start, type);
+
+    while(!valid_character_position) {
+        start.x = (rand() % MAP_WIDTH - 2) + 1;
+        start.y = (rand() % MAP_HEIGHT - 2) + 1;
+
+        valid_character_position = check_trainer_position(map, start, type);
+    }
+
+    map->trainer_map[start.y][start.x] = malloc(sizeof (trainer_t));
+    trainer_init(map->trainer_map[start.y][start.x], type);
+
+    map->trainer_map[start.y][start.x]->pos = start;
+    heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
+}
+
+void trainer_map_init(map_t *map, int num_trainers, trainer_t *pc)
+{
+    int x, y, npc_count;
+
+    map->turn_heap = malloc(sizeof (heap_t));
+    heap_init(map->turn_heap, turn_cmp, NULL);
+
+    for (y = 0; y < MAP_HEIGHT; y++) {
+        for (x = 0; x < MAP_WIDTH; x++) {
+            map->trainer_map[y][x] = NULL;
+        }
+    }
+
+    if (pc == NULL) {
+        place_pc(map->turn_heap, map);
+    } else {
+        map->trainer_map[pc->pos.y][pc->pos.x] = pc;
+        map->pc_pos = pc->pos;
+        pc->next_turn = 0;
+    }
+
+    if (num_trainers == 1) {
+        place_npc(map->turn_heap, map, rand() % 7 + 1);
+    } else if (num_trainers >= 2) {
+        place_npc(map->turn_heap, map, hiker);
+        place_npc(map->turn_heap, map, rival);
+
+        npc_count = 2;
+        if (num_trainers >= 7) {
+            place_npc(map->turn_heap, map, pacer);
+            place_npc(map->turn_heap, map, wanderer);
+            place_npc(map->turn_heap, map, sentry);
+            place_npc(map->turn_heap, map, explorer);
+            place_npc(map->turn_heap, map, swimmer);
+            npc_count = 7;
+        }
+
+        while(npc_count < num_trainers) {
+            place_npc(map->turn_heap, map, rand() % 7 + 1);
+            npc_count++;
+        }
+    }
 }

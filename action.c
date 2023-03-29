@@ -209,13 +209,13 @@ void enter_building(map_t *map, trainer_t *pc)
     }
 }
 
-void trainer_info(map_t *map)
+void trainer_info(map_t *map, int num_trainers)
 {
     int x, y, npc_rise, npc_run, key, i, shift;
     char trainer_char;
     char output[25];
     WINDOW *trainer_win;
-    char *trainer_info[map->num_trainers];
+    char *trainer_info[num_trainers];
 
     trainer_win = create_newwin(10, 24, 1, 0);
     i = 0;
@@ -276,7 +276,7 @@ void trainer_info(map_t *map)
         }
     }
 
-    for (i = 0; i < map->num_trainers || i < 10; i++) {
+    for (i = 0; i < num_trainers || i < 10; i++) {
         mvwprintw(trainer_win, i, 0, trainer_info[i]);
     }
 
@@ -288,18 +288,18 @@ void trainer_info(map_t *map)
         switch (key)
         {
             case KEY_DOWN:
-                if (map->num_trainers > 10 && map->num_trainers - shift > 10) {
+                if (num_trainers > 10 && num_trainers - shift > 10) {
                     shift++;
-                    for (i = 0; i < 10 && i + shift < map->num_trainers; i++) {
+                    for (i = 0; i < 10 && i + shift < num_trainers; i++) {
                         mvwprintw(trainer_win, i, 0, trainer_info[i + shift]);
                     }
                     wrefresh(trainer_win);
                 }
                 break;
             case KEY_UP:
-                if (shift > 0 && map->num_trainers > 10) {
+                if (shift > 0 && num_trainers > 10) {
                     shift--;
-                    for (i = 0; i < 10 && i + shift < map->num_trainers; i++) {
+                    for (i = 0; i < 10 && i + shift < num_trainers; i++) {
                         mvwprintw(trainer_win, i, 0, trainer_info[i + shift]);
                     }
                     wrefresh(trainer_win);
@@ -310,7 +310,7 @@ void trainer_info(map_t *map)
         }
     }
 
-    for (i = 0; i < map->num_trainers; i++) {
+    for (i = 0; i < num_trainers; i++) {
         free(trainer_info[i]);
     }
 
@@ -337,10 +337,14 @@ int battle()
     return 0;
 }
 
-void move_pc(map_t *map, trainer_t *pc, int input)
+char move_pc(map_t *map, trainer_t *pc, int input)
 {
+    if (map->turn_heap) {}
+    char ret_val;
     coordinate_t new_pos;
     int battle_outcome;
+
+    ret_val = 0;
 
     if (input == '7' || input == 'y') {
         new_pos.y = pc->pos.y - 1;
@@ -369,6 +373,19 @@ void move_pc(map_t *map, trainer_t *pc, int input)
     }
 
     if (get_terrain_cost(map->terrain[new_pos.y][new_pos.x], pc->type) != INT_MAX) {
+        // Determine if in top row of map or right column of map or bottom row of map or left column of map 
+        if (map->terrain[new_pos.y][new_pos.x] == gate) {
+            if (new_pos.y == 0) {
+                ret_val = 'n';
+            } else if (new_pos.y == MAP_HEIGHT - 1) {
+                ret_val = 's';
+            } else if (new_pos.x == 0) {
+                ret_val = 'w';
+            } else if (new_pos.x == MAP_WIDTH - 1) {
+                ret_val = 'e';
+            }  
+        }
+        
         if (map->trainer_map[new_pos.y][new_pos.x] != NULL) {
             if (map->trainer_map[new_pos.y][new_pos.x]->next_turn > -1) {
                 battle_outcome = battle();
@@ -391,6 +408,8 @@ void move_pc(map_t *map, trainer_t *pc, int input)
             pc->next_turn = pc->next_turn + get_terrain_cost(map->terrain[pc->pos.y][pc->pos.x], pc->type);
         }
     }
+
+    return ret_val;
 }
 
 void move_dijkstra_trainer(heap_t *path_heap, path_t path[MAP_HEIGHT][MAP_WIDTH], map_t *map, trainer_t *t)

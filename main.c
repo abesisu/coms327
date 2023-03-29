@@ -11,11 +11,6 @@ static int32_t path_cmp(const void *key, const void *with) { // make heap compar
     return ((path_t *) key)->cost - ((path_t *) with)->cost;
 }
 
-static int32_t turn_cmp(const void *key, const void *with) { // make heap compare turns
-    int32_t next_turn = ((trainer_t *) key)->next_turn - ((trainer_t *) with)->next_turn;
-    return (next_turn == 0) ? ((trainer_t *) key)->seq_num - ((trainer_t *) with)->seq_num : next_turn;
-}
-
 chtype view[MAP_HEIGHT][MAP_WIDTH];
 
 void init_terminal(void)
@@ -141,10 +136,83 @@ void render_view(map_t *map)
     refresh();
 }
 
-int pc_turn(map_t *map, trainer_t *pc)
+void place_gates(world_t *world)
 {
-    int quit_game, valid;
-    int key;
+    if (world->location.y == 0) { // top of map
+        world->current_map->n = -1;
+    } else if (world->location.y == WORLD_HEIGHT - 1) { // bottom of map
+        world->current_map->s = -1;
+    } 
+    
+    if (world->location.x == 0) { // west edge of map
+        world->current_map->w = -1;
+    } else if (world->location.x == WORLD_WIDTH - 1) { // east edge of map
+        world->current_map->e = -1;
+    }
+
+    // Check for north gate
+    if (world->location.y > 0 && world->board[world->location.y - 1][world->location.x] != NULL) {
+        world->current_map->n = world->board[world->location.y - 1][world->location.x]->s;
+    }
+
+    // Check for south gate
+    if (world->location.y < WORLD_HEIGHT - 1 && world->board[world->location.y + 1][world->location.x] != NULL) {
+        world->current_map->s = world->board[world->location.y + 1][world->location.x]->n;
+    } 
+    
+    // Check for west gate
+    if (world->location.x > 0 && world->board[world->location.y][world->location.x - 1] != NULL) {
+        world->current_map->w = world->board[world->location.y][world->location.x - 1]->e;
+    }
+
+    // Check for east gate 
+    if (world->location.x < WORLD_WIDTH - 1 && world->board[world->location.y][world->location.x + 1] != NULL) {
+        world->current_map->e = world->board[world->location.y][world->location.x + 1]->w;
+    }
+}
+
+void change_map(world_t *world, trainer_t *pc, char new_map)
+{
+    int manhattan_distance;
+
+    world->current_map->trainer_map[pc->pos.y][pc->pos.x] = NULL;
+    world->current_map->pc_turn = pc->next_turn;
+    
+    if (new_map == 'n' && world->location.y > 0) {
+        world->location.y--;
+        pc->pos.y = MAP_HEIGHT - 2;
+    } else if (new_map == 's' && world->location.y < WORLD_HEIGHT - 1) {
+        world->location.y++;
+        pc->pos.y = 1;
+    } else if (new_map == 'w' && world->location.x > 0) {
+        world->location.x--;
+        pc->pos.x = MAP_WIDTH - 2;
+    } else if (new_map == 'e' && world->location.x < WORLD_WIDTH - 1) {
+        world->location.x++;
+        pc->pos.x = 1;
+    }
+
+    if (world->board[world->location.y][world->location.x] == NULL) {
+        world->current_map = malloc(sizeof (*world->current_map));
+        map_init(world->current_map);
+        world->board[world->location.y][world->location.x] = world->current_map;
+
+        place_gates(world);
+        manhattan_distance = abs(world->location.x - START_X) + abs(world->location.y - START_Y);
+        generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, manhattan_distance);
+        trainer_map_init(world->current_map, world->num_trainers, pc); // init trainer_map, pc_pos, and turn_heap
+    }
+
+    world->current_map = world->board[world->location.y][world->location.x];
+    pc->next_turn = world->current_map->pc_turn;
+    world->current_map->trainer_map[pc->pos.y][pc->pos.x] = pc;
+    world->current_map->pc_pos = pc->pos;
+}
+
+int pc_turn(world_t *world, trainer_t *pc)
+{
+    int quit_game, valid, key;
+    char new_map;
 
     quit_game = valid = 0;
 
@@ -168,9 +236,11 @@ int pc_turn(map_t *map, trainer_t *pc)
             case 'b':
             case '4':
             case 'h':
-                move_pc(map, pc, key);
+                new_map = move_pc(world->current_map, pc, key);
                 valid = 1;
                 break;
+            case 'f':
+                // add flying functionality
             case '5':
             case ' ':
             case '.':
@@ -178,12 +248,12 @@ int pc_turn(map_t *map, trainer_t *pc)
                 valid = 1;
                 break;
             case '>':
-                enter_building(map, pc);
+                enter_building(world->current_map, pc);
                 valid = 1;
                 break;
             case 't':
-                trainer_info(map);
-                render_view(map);
+                trainer_info(world->current_map, world->num_trainers);
+                render_view(world->current_map);
                 valid = 0;
                 continue;
             case 'Q':
@@ -201,10 +271,14 @@ int pc_turn(map_t *map, trainer_t *pc)
         quit_game = 1;
     }
 
+    if (new_map != 0) {
+        change_map(world, pc, new_map);
+    }
+
     return quit_game;
 }
 
-void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
+void game_loop(heap_t *path_heap, world_t *world)
 {
     trainer_t *t;
     int x, y, quit_game;
@@ -226,11 +300,11 @@ void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
     render_view(world->current_map);
 
     while (!quit_game) {
-        t = heap_remove_min(turn_heap);
+        t = heap_remove_min(world->current_map->turn_heap);
 
         switch (t->type) {
             case pc:
-                quit_game = pc_turn(world->current_map, t);
+                quit_game = pc_turn(world, t);
                 break;
             case hiker:
                 move_dijkstra_trainer(path_heap, world->hiker_path, world->current_map, t);
@@ -256,7 +330,7 @@ void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
         render_view(world->current_map);
 
         if (t->next_turn > -1) {
-            heap_insert(turn_heap, t);
+            heap_insert(world->current_map->turn_heap, t);
         }
 
         if (world->current_map->trainer_map[world->current_map->pc_pos.y][world->current_map->pc_pos.x] != NULL &&
@@ -266,23 +340,28 @@ void game_loop(heap_t *turn_heap, heap_t *path_heap, world_t *world)
     }
 }
 
-void world_init(heap_t *turn_heap, world_t *world, int num_trainers)
+void world_init(world_t *world, int num_trainers)
 {
-    int x, y;
+    int x, y, manhattan_distance;
     for (y = 0; y < WORLD_HEIGHT; y++) {
         for (x = 0; x < WORLD_WIDTH; x++) {
             world->board[y][x] = NULL;
         }
     }
-
+    world->current_map = NULL;
     world->current_map = malloc(sizeof (*world->current_map));
 
     world->location.x = START_X;
     world->location.y = START_Y;
+    world->num_trainers = num_trainers;
 
     world->board[START_Y][START_X] = malloc(sizeof (*world->current_map));
     world->current_map = world->board[START_Y][START_X];
-    map_init(turn_heap, world->current_map, num_trainers);
+    map_init(world->current_map);
+    place_gates(world);
+    manhattan_distance = abs(world->location.x - START_X) + abs(world->location.y - START_Y);
+    generate_map(world->current_map, world->current_map->n, world->current_map->s, world->current_map->w, world->current_map->e, manhattan_distance);
+    trainer_map_init(world->current_map, world->num_trainers, NULL); // init trainer_map, pc_pos, and turn_heap
 
     for (y = 0; y < MAP_HEIGHT; y++) {
         for (x = 0; x < MAP_WIDTH; x++) {
@@ -301,14 +380,6 @@ void world_init(heap_t *turn_heap, world_t *world, int num_trainers)
             world->rival_path[y][x].cost = INT_MAX;
         }
     }
-
-    for (y = 0; y < MAP_HEIGHT; y++) {
-        for (x = 0; x < MAP_WIDTH; x++) {
-            world->view[y][x] = '!';
-        }
-
-        world->view[y][MAP_WIDTH] = '\n';
-    }
 }
 
 void world_delete(world_t *world)
@@ -318,6 +389,7 @@ void world_delete(world_t *world)
     for (y = 0; y < WORLD_HEIGHT; y++) {
         for (x = 0; x < WORLD_WIDTH; x++) {
             if (world->board[y][x] != NULL) {
+                trainer_delete(world->board[y][x]->trainer_map);
                 map_delete(world->board[y][x]);
             }
         }
@@ -328,7 +400,7 @@ void world_delete(world_t *world)
 
 int main(int argc, char *argv[])
 {
-    heap_t path_heap, turn_heap;
+    heap_t path_heap;
     world_t *world;
 
     srand(time(NULL));
@@ -338,31 +410,29 @@ int main(int argc, char *argv[])
     init_view();
 
     heap_init(&path_heap, path_cmp, NULL);
-    heap_init(&turn_heap, turn_cmp, NULL);
 
     world = malloc(sizeof (*world));
     if (argc == 3) {
         if (!strcmp(argv[1], "--numtrainers")) {
-            world_init(&turn_heap, world, atoi(argv[2]));
+            world_init(world, atoi(argv[2]));
         } else {
             fprintf(stderr, "Usage: \"./play --numtrainers <integer>\" or \"./play\" \n");
 
             return -1;
         }
     } else if (argc == 1) {
-        world_init(&turn_heap, world, 10);
+        world_init(world, 10);
     } else {
         fprintf(stderr, "Usage: \"./play --numtrainers <integer>\" or \"./play\" \n");
 
         return -1;
     }
 
-    game_loop(&turn_heap, &path_heap, world);
+    game_loop(&path_heap, world);
 
     endwin();
 
     heap_delete(&path_heap);
-    heap_delete(&turn_heap);
     world_delete(world);
 
     printf("Thanks for playing!\n");

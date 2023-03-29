@@ -10,11 +10,11 @@ typedef struct world {
 
     path_t hiker_path[MAP_HEIGHT][MAP_WIDTH];
     path_t rival_path[MAP_HEIGHT][MAP_WIDTH];
-
-    char view[MAP_HEIGHT][MAP_WIDTH + 1];
+    
+    int num_trainers;
 } world_t;
 
-void world_init(heap_t *turn_heap, world_t *world, int num_trainers);
+void world_init(world_t *world, int num_trainers);
 
 void world_delete(world_t *world);
 

@@ -10,3 +10,4 @@
 2/28/23 Completed all character functionality and added flag option for number of trainers
 3/20/23 Finished npc movement schemes and battle logic
 3/22/23 Finished ncurses work to display trainer_info, battle, and building info. Cleaned up pc movement
+3/28/23 PC can now move map to map through gates
