@@ -2,6 +2,7 @@
 *.d
 *
 !*.c
+!*.cpp
 !*.h
 !Makefile
 !CHANGELOG
