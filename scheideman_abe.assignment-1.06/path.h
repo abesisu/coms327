@@ -1,6 +1,7 @@
 #ifndef PATH_H
 #define PATH_H
 
+#include <climits>
 #include "map.h"
 
 class path {
