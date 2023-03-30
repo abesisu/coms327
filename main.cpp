@@ -1,5 +1,6 @@
 #include <iostream>
 #include <ncurses.h>
+#include <cstring>
 
 #include "world.h"
 
