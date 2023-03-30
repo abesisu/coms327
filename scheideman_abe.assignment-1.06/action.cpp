@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <string>
+#include <cstring>
 
 #include "action.h"
 
