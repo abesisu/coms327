@@ -64,7 +64,7 @@ class world {
         void set_current_map(map *m) { current_map = m; }
         coordinate_t get_location() { return location; }
         void set_location_y(int y) { location.y = y; }
-        void set_location_x(int x) { location.y = x; }
+        void set_location_x(int x) { location.x = x; }
         int get_num_trainers() const { return num_trainers; }
 };
 

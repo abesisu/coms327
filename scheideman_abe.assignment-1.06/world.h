@@ -4,12 +4,12 @@
 #include "action.h"
 
 class world {
-    private:
+        private:
         map *current_map;
         coordinate_t location;
 
         int num_trainers;
-    public:
+        public:
         map *board[WORLD_HEIGHT][WORLD_WIDTH];
         path hiker_path[MAP_HEIGHT][MAP_WIDTH];
         path rival_path[MAP_HEIGHT][MAP_WIDTH];
@@ -64,7 +64,7 @@ class world {
         void set_current_map(map *m) { current_map = m; }
         coordinate_t get_location() { return location; }
         void set_location_y(int y) { location.y = y; }
-        void set_location_x(int x) { location.y = x; }
+        void set_location_x(int x) { location.x = x; }
         int get_num_trainers() const { return num_trainers; }
 };
 

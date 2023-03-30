@@ -213,7 +213,6 @@ void action::trainer_info(map *map, int num_trainers)
     int x, y, npc_rise, npc_run, key, i, shift;
     char trainer_char;
     std::string output;
-    const char *trainer_output;
     WINDOW *trainer_win;
     char *trainer_info[num_trainers];
 
@@ -224,6 +223,7 @@ void action::trainer_info(map *map, int num_trainers)
     for (y = 1; y < MAP_HEIGHT - 1; y++) {
         for (x = 1; x < MAP_WIDTH - 1; x++) {
             if (map->trainer_map[y][x] != nullptr) {
+                output = "";
                 switch (map->trainer_map[y][x]->get_type())
                 {
                     case pc_e:
@@ -286,8 +286,7 @@ void action::trainer_info(map *map, int num_trainers)
                 }
 
                 trainer_info[i] = (char *) malloc(output.size());
-                trainer_output = output.c_str();
-                strcpy(trainer_info[i], trainer_output);
+                strcpy(trainer_info[i], output.c_str());
                 i++;
             }
         }
