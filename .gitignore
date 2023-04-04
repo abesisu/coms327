@@ -9,6 +9,7 @@
 !README
 !*/
 lecture_files/
+pokemon/
 
 # Object files
 *.o
