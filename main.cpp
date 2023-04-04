@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
     // int manhattan_distance;
     // heap_t path_heap;
     // world *w;
-    int got_data, i;
+    int got_data;
     Data data;
 
     // srand(time(nullptr));
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon data." << std::endl;
             } else {
-
+                std::vector<Pokemon>::size_type i;
                 for (i = 0; i < data.pokemon.size(); i++) {
                     p = &data.pokemon[i];
                     std::cout << (*p).id << ", " << (*p).identifier << ", " << (*p).species_id << ", " 
@@ -410,6 +410,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon types data." << std::endl;
             } else {
+                std::vector<PokemonType>::size_type i;
                 for (i = 0; i < data.pokemon_types.size(); i++) {
                     pt = &data.pokemon_types[i];
                     std::cout << (*pt).pokemon_id << ", " << (*pt).type_id << ", " << (*pt).slot << std::endl;
@@ -422,6 +423,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get type names data." << std::endl;
             } else {
+                std::vector<TypeName>::size_type i;
                 for (i = 0; i < data.type_names.size(); i++) {
                     tn = &data.type_names[i];
                     std::cout << (*tn).type_id << ", " << (*tn).local_language_id << ", " << (*tn).name << std::endl;
@@ -434,6 +436,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon species data." << std::endl;
             } else {
+                std::vector<PokemonSpecies>::size_type i;
                 for (i = 0; i < data.pokemon_species.size(); i++) {
                     ps = &data.pokemon_species[i];
                     std::cout << (*ps).id << ", " << (*ps).identifier << ", " << (*ps).generation_id << ", " 
@@ -453,6 +456,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon stats data." << std::endl;
             } else {
+                std::vector<PokemonStat>::size_type i;
                 for (i = 0; i < data.pokemon_stats.size(); i++) {
                     ps = &data.pokemon_stats[i];
                     std::cout << (*ps).pokemon_id << ", " << (*ps).stat_id << ", " 
@@ -466,6 +470,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get stats data." << std::endl;
             } else {
+                std::vector<Stat>::size_type i;
                 for (i = 0; i < data.stats.size(); i++) {
                     s = &data.stats[i];
                     std::cout << (*s).id << ", " << (*s).damage_class_id << ", " << (*s).identifier << ", " 
@@ -479,6 +484,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon moves data." << std::endl;
             } else {
+                std::vector<PokemonMove>::size_type i;
                 for (i = 0; i < data.pokemon_moves.size(); i++) {
                     pm = &data.pokemon_moves[i];
                     std::cout << (*pm).pokemon_id << ", " << (*pm).version_group_id << ", " << (*pm).move_id << ", " 
@@ -492,6 +498,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get moves data." << std::endl;
             } else {
+                std::vector<Move>::size_type i;
                 for (i = 0; i < data.moves.size(); i++) {
                     m = &data.moves[i];
                     std::cout << (*m).id << ", " << (*m).identifier << ", " << (*m).generation_id << ", " << (*m).type_id << ", " 
@@ -508,6 +515,7 @@ int main(int argc, char *argv[])
             if (!got_data) {
                 std::cerr << "Error: Could not get experience data." << std::endl;
             } else {
+                std::vector<Experience>::size_type i;
                 for (i = 0; i < data.experience.size(); i++) {
                     e = &data.experience[i];
                     std::cout << (*e).growth_rate_id << ", " << (*e).level << ", " << (*e).experience << std::endl;
