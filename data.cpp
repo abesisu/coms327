@@ -1,3 +1,4 @@
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include "data.h"
