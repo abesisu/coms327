@@ -151,19 +151,19 @@ public:
 class Stat {
 public:
     int id;
-    std::string identifier;
     int damage_class_id;
+    std::string identifier;
     int is_battle_only;
     int game_index;
     Stat(int id,
-         std::string identifier,
          int damage_class_id,
+         std::string identifier,
          int is_battle_only,
          int game_index)
     {
         this->id = id;
-        this->identifier = identifier;
         this->damage_class_id = damage_class_id;
+        this->identifier = identifier;
         this->is_battle_only = is_battle_only;
         this->game_index = game_index;
     }

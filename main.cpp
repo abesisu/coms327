@@ -390,118 +390,127 @@ int main(int argc, char *argv[])
         // } else 
         if (strcmp(argv[1], "pokemon") == 0) { 
             got_data = data.get_pokemon(data);
+            Pokemon *p;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon data." << std::endl;
             } else {
 
                 for (i = 0; i < data.pokemon.size(); i++) {
-                    Pokemon &p = data.pokemon[i];
-                    std::cout << p.id << ", " << p.identifier << ", " << p.species_id << ", " 
-                              <<p.height << ", " << p.weight << ", " << p.base_experience << ", " 
-                              << p.order << ", " << p.is_default << std::endl;
+                    p = &data.pokemon[i];
+                    std::cout << (*p).id << ", " << (*p).identifier << ", " << (*p).species_id << ", " 
+                              <<(*p).height << ", " << (*p).weight << ", " << (*p).base_experience << ", " 
+                              << (*p).order << ", " << (*p).is_default << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "pokemon_types") == 0) {
             got_data = data.get_pokemon_types(data);
+            PokemonType *pt;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon types data." << std::endl;
             } else {
                 for (i = 0; i < data.pokemon_types.size(); i++) {
-                    PokemonType &pt = data.pokemon_types[i];
-                    std::cout << pt.pokemon_id << ", " << pt.type_id << ", " << pt.slot << std::endl;
+                    pt = &data.pokemon_types[i];
+                    std::cout << (*pt).pokemon_id << ", " << (*pt).type_id << ", " << (*pt).slot << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "type_names") == 0) {
             got_data = data.get_type_names(data);
+            TypeName *tn;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get type names data." << std::endl;
             } else {
                 for (i = 0; i < data.type_names.size(); i++) {
-                    TypeName &tn = data.type_names[i];
-                    std::cout << tn.type_id << ", " << tn.local_language_id << ", " << tn.name << std::endl;
+                    tn = &data.type_names[i];
+                    std::cout << (*tn).type_id << ", " << (*tn).local_language_id << ", " << (*tn).name << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "pokemon_species") == 0) {
             got_data = data.get_pokemon_species(data);
+            PokemonSpecies *ps;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon species data." << std::endl;
             } else {
                 for (i = 0; i < data.pokemon_species.size(); i++) {
-                    PokemonSpecies &ps = data.pokemon_species[i];
-                    std::cout << ps.id << ", " << ps.identifier << ", " << ps.generation_id << ", " 
-                              << ps.evolves_from_species_id << ", " << ps.evolution_chain_id << ", " 
-                              << ps.color_id << ", " << ps.shape_id << ", " << ps.habitat_id << ", " 
-                              << ps.gender_rate << ", " << ps.capture_rate << ", " << ps.base_happiness 
-                              << ", " << ps.is_baby << ", " << ps.hatch_counter << ", " 
-                              << ps.has_gender_differences << ", " << ps.growth_rate_id << ", " 
-                              << ps.forms_switchable << ", " << ps.is_legendary << ", " 
-                              << ps.is_mythical << ", " << ps.order << ", " << ps.conquest_order << std::endl;
+                    ps = &data.pokemon_species[i];
+                    std::cout << (*ps).id << ", " << (*ps).identifier << ", " << (*ps).generation_id << ", " 
+                              << (*ps).evolves_from_species_id << ", " << (*ps).evolution_chain_id << ", " 
+                              << (*ps).color_id << ", " << (*ps).shape_id << ", " << (*ps).habitat_id << ", " 
+                              << (*ps).gender_rate << ", " << (*ps).capture_rate << ", " << (*ps).base_happiness 
+                              << ", " << (*ps).is_baby << ", " << (*ps).hatch_counter << ", " 
+                              << (*ps).has_gender_differences << ", " << (*ps).growth_rate_id << ", " 
+                              << (*ps).forms_switchable << ", " << (*ps).is_legendary << ", " 
+                              << (*ps).is_mythical << ", " << (*ps).order << ", " << (*ps).conquest_order << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "pokemon_stats") == 0) {
             got_data = data.get_pokemon_stats(data);
+            PokemonStat *ps;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon stats data." << std::endl;
             } else {
                 for (i = 0; i < data.pokemon_stats.size(); i++) {
-                    PokemonStat &ps = data.pokemon_stats[i];
-                    std::cout << ps.pokemon_id << ", " << ps.stat_id << ", " 
-                              << ps.base_stat << ", " << ps.effort << std::endl;
+                    ps = &data.pokemon_stats[i];
+                    std::cout << (*ps).pokemon_id << ", " << (*ps).stat_id << ", " 
+                              << (*ps).base_stat << ", " << (*ps).effort << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "stats") == 0) {
             got_data = data.get_stats(data);
+            Stat *s;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get stats data." << std::endl;
             } else {
                 for (i = 0; i < data.stats.size(); i++) {
-                    Stat &s = data.stats[i];
-                    std::cout << s.id << ", " << s.identifier << ", " << s.damage_class_id << ", " 
-                              << s.is_battle_only << ", " << s.game_index << std::endl;
+                    s = &data.stats[i];
+                    std::cout << (*s).id << ", " << (*s).damage_class_id << ", " << (*s).identifier << ", " 
+                              << (*s).is_battle_only << ", " << (*s).game_index << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "pokemon_moves") == 0) {
             got_data = data.get_pokemon_moves(data);
+            PokemonMove *pm;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get pokemon moves data." << std::endl;
             } else {
                 for (i = 0; i < data.pokemon_moves.size(); i++) {
-                    PokemonMove &pm = data.pokemon_moves[i];
-                    std::cout << pm.pokemon_id << ", " << pm.version_group_id << ", " << pm.move_id << ", " 
-                              << pm.pokemon_move_method_id << ", " << pm.level << ", " << pm.order << std::endl;
+                    pm = &data.pokemon_moves[i];
+                    std::cout << (*pm).pokemon_id << ", " << (*pm).version_group_id << ", " << (*pm).move_id << ", " 
+                              << (*pm).pokemon_move_method_id << ", " << (*pm).level << ", " << (*pm).order << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "moves") == 0) {
             got_data = data.get_moves(data);
+            Move *m;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get moves data." << std::endl;
             } else {
                 for (i = 0; i < data.moves.size(); i++) {
-                    Move &m = data.moves[i];
-                    std::cout << m.id << ", " << m.identifier << ", " << m.generation_id << ", " << m.type_id << ", " 
-                              << m.power << ", " << m.pp << ", " << m.accuracy << ", " << m.priority << ", " 
-                              << m.target_id << ", " << m.damage_class_id << ", " << m.effect_id << ", " 
-                              << m.effect_chance << ", " << m.contest_type_id << ", " << m.contest_effect_id << ", " 
-                              << m.super_contest_effect_id << std::endl;
+                    m = &data.moves[i];
+                    std::cout << (*m).id << ", " << (*m).identifier << ", " << (*m).generation_id << ", " << (*m).type_id << ", " 
+                              << (*m).power << ", " << (*m).pp << ", " << (*m).accuracy << ", " << (*m).priority << ", " 
+                              << (*m).target_id << ", " << (*m).damage_class_id << ", " << (*m).effect_id << ", " 
+                              << (*m).effect_chance << ", " << (*m).contest_type_id << ", " << (*m).contest_effect_id << ", " 
+                              << (*m).super_contest_effect_id << std::endl;
                 }
             }
         } else if (strcmp(argv[1], "experience") == 0) { 
             got_data = data.get_experience(data);
+            Experience *e;
 
             if (!got_data) {
                 std::cerr << "Error: Could not get experience data." << std::endl;
             } else {
                 for (i = 0; i < data.experience.size(); i++) {
-                    Experience &e = data.experience[i];
-                    std::cout << e.growth_rate_id << ", " << e.level << ", " << e.experience << std::endl;
+                    e = &data.experience[i];
+                    std::cout << (*e).growth_rate_id << ", " << (*e).level << ", " << (*e).experience << std::endl;
                 }
             }
         } else {
