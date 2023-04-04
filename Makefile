@@ -1,7 +1,7 @@
 all: play
 
-play: heap.o map.o path.o action.o main.o
-	g++ heap.o map.o path.o action.o main.o -lncurses -o play
+play: heap.o map.o path.o action.o data.o main.o
+	g++ heap.o map.o path.o action.o data.o main.o -lncurses -o play
 
 heap.o: heap.c heap.h
 	gcc -Wall -Werror -g -c heap.c -o heap.o
@@ -15,8 +15,11 @@ path.o: path.cpp path.h
 action.o: action.cpp action.h
 	g++ -Wall -Werror -g -c action.cpp -o action.o
 
-main.o: main.cpp world.h
+data.o: data.cpp data.h
+	g++ -Wall -Werror -g -c data.cpp -o data.o
+
+main.o: main.cpp world.h data.h
 	g++ -Wall -Werror -g -c main.cpp -o main.o
 
 clean:
-	rm -f play heap.o map.o path.o action.o main.o *~ core
+	rm -f play heap.o map.o path.o action.o data.o main.o *~ core
