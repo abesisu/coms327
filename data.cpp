@@ -9,7 +9,7 @@ std::ifstream *get_file(std::string filename)
     std::string path = "/share/cs327/pokedex/pokedex/data/csv/" + filename;
     std::string home_path;
     if (char *home = std::getenv("HOME")) {
-        home_path = std::string(home) + "/" + filename;
+        home_path = std::string(home) + "/.poke327/pokedex/pokedex/data/csv/" + filename;
     }
     std::string local_path = "/Users/abescheideman/Documents/ISUClasses/Spring23/coms327/pokemon/pokedex/pokedex/data/csv/" + filename;
 
