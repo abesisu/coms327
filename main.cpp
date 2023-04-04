@@ -522,7 +522,8 @@ int main(int argc, char *argv[])
                 }
             }
         } else {
-            std::cerr << "Usage: \"./play <object>\" or \"./play\" " << std::endl;
+            std::cerr << "Usage: \"./play <object>\" or \"./play\" where <object> is one of \n \\
+                pokemon, moves, pokemon_moves, pokemon_species, experience, type_names, pokemon stats, stats or pokemon_types" << std::endl;
 
             got_data = -1;
         }
@@ -534,7 +535,8 @@ int main(int argc, char *argv[])
            std::cerr << "Error: Could not get data." << std::endl;
        }
     } else {
-        std::cerr << "Usage: \"./play <object>\" or \"./play\" " << std::endl;
+        std::cerr << "Usage: \"./play <object>\" or \"./play\" where <object> is one of \n \\
+                pokemon, moves, pokemon_moves, pokemon_species, experience, type_names, pokemon stats, stats or pokemon_types" << std::endl;
 
         got_data = -1;
     }
