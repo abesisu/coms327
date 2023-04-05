@@ -4,15 +4,14 @@
 Over the course of the Spring 2023 semester, I will build a terminal-based version of Pokémon.
 
 ### Feature Update:
-Files are in C++ and PC can move map to map!
+Parse in Pokemon data from a database!
 
 ```
-The game now runs in C++. The user can traverse from map to map.
-The user can also fly to different maps. There are a couple of known bugs
-These are likely simple off by one errors that need a fine toothed combing
-some other day. Flying doesn't take the user to the exact location, and 
-going to east or west maps doesn't quite work either.
+The game now parses in data from 9 different CSV data files and can print out the 
+information stored. 
 ```
 
-To test the feature, run `make` then `./play`.
-To specify a certain number of trainers, run `make` then `./play --numtrainers <integer>`.
+To test the features, run `make` then `./play` to parse in every file 
+or `./play <object>` where <object> is one of pokemon, moves, pokemon_moves,
+pokemon_species, experience, type_names, pokemon_stats, stats or pokemon_types
+to parse that file and print the data.

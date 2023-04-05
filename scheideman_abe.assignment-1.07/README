@@ -1,0 +1,13 @@
+Parse in Pokemon data from a database!
+
+The game now parses in data from 9 different CSV data files and can print out the 
+information stored. 
+
+To test the features, run make then ./play to parse in every file 
+or ./play <object> where <object> is one of pokemon, moves, pokemon_moves,
+pokemon_species, experience, type_names, pokemon_stats, stats or pokemon_types
+to parse that file and print the data.
+
+To create a tarball, run:
+make clean - in this directory
+tar cvfz scheideman_abe.assignment-1.07.tar.gz scheideman_abe.assignment-1.07 - from the parent directory
