@@ -384,7 +384,7 @@ void construct_border(map *map, int n, int s, int w, int e)
 }
 
 /* Take the given map and populate it with the necessary types of terrain, roads, and buildings. */
-void map::generate_map(map *map, int n, int s, int w, int e, int manhattan_distance)
+void generate_map(map *map, int n, int s, int w, int e, int manhattan_distance)
 {
     construct_border(map, n, s, w, e);
 
@@ -429,7 +429,7 @@ int check_trainer_position(map *map, coordinate_t pos, trainer_type_e type)
 }
 
 /* Add the PC to a road in this map. */
-void place_new_pc(heap_t *turn_heap, map *map)
+void place_new_pc(heap_t *turn_heap, map *map, Pokemon *starter)
 {
     int y, x, count;
     count = 0;
@@ -460,14 +460,13 @@ void place_new_pc(heap_t *turn_heap, map *map)
     }
 
     start = start_options[rand() % count];
-
-    map->trainer_map[start.y][start.x] = new trainer(pc_e);
+    map->trainer_map[start.y][start.x] = new pc(starter);
     map->set_pc_pos(start);
     map->trainer_map[start.y][start.x]->set_pos(start);
     heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
 }
 
-void map::place_pc(map *map, pc *pc)
+void place_pc(map *map, pc *pc)
 {
     int y, x, count;
     count = 0;
@@ -498,10 +497,11 @@ void map::place_pc(map *map, pc *pc)
     pc->set_pos(start_options[rand() % count]);
 }
 
-void place_npc(heap_t *turn_heap, map *map, trainer_type_e type)
+void place_npc(heap_t *turn_heap, map *map, Data *data, trainer_type_e type, int manhattan_distance)
 {
     coordinate_t start;
     int valid_character_position;
+
 
     start.x = (rand() % MAP_WIDTH - 2) + 1;
     start.y = (rand() % MAP_HEIGHT - 2) + 1;
@@ -515,12 +515,12 @@ void place_npc(heap_t *turn_heap, map *map, trainer_type_e type)
         valid_character_position = check_trainer_position(map, start, type);
     }
 
-    map->trainer_map[start.y][start.x] = new trainer(type);
+    map->trainer_map[start.y][start.x] = new npc(data, type, manhattan_distance);
     map->trainer_map[start.y][start.x]->set_pos(start);
     heap_insert(turn_heap, map->trainer_map[start.y][start.x]);
 }
 
-void map::trainer_map_init(map *map, int num_trainers, pc *pc)
+void trainer_map_init(map *map, Data *data, int num_trainers, pc *pc, Pokemon *starter, int manhattan_distance)
 {
     int x, y, npc_count;
 
@@ -533,8 +533,8 @@ void map::trainer_map_init(map *map, int num_trainers, pc *pc)
         }
     }
 
-    if (pc == nullptr) {
-        place_new_pc(map->get_turn_heap(), map);
+    if (pc == nullptr && starter != nullptr) {
+        place_new_pc(map->get_turn_heap(), map, starter);
     } else {
         map->trainer_map[pc->get_pos().y][pc->get_pos().x] = pc;
         map->set_pc_pos(pc->get_pos());
@@ -542,23 +542,23 @@ void map::trainer_map_init(map *map, int num_trainers, pc *pc)
     }
 
     if (num_trainers == 1) {
-        place_npc(map->get_turn_heap(), map, (trainer_type_e) (rand() % 7 + 1));
+        place_npc(map->get_turn_heap(), map, data, (trainer_type_e) (rand() % 7 + 1), manhattan_distance);
     } else if (num_trainers >= 2) {
-        place_npc(map->get_turn_heap(), map, hiker_e);
-        place_npc(map->get_turn_heap(), map, rival_e);
+        place_npc(map->get_turn_heap(), map, data, hiker_e, manhattan_distance);
+        place_npc(map->get_turn_heap(), map, data, rival_e, manhattan_distance);
 
         npc_count = 2;
         if (num_trainers >= 7) {
-            place_npc(map->get_turn_heap(), map, pacer_e);
-            place_npc(map->get_turn_heap(), map, wanderer_e);
-            place_npc(map->get_turn_heap(), map, sentry_e);
-            place_npc(map->get_turn_heap(), map, explorer_e);
-            place_npc(map->get_turn_heap(), map, swimmer_e);
+            place_npc(map->get_turn_heap(), map, data, pacer_e, manhattan_distance);
+            place_npc(map->get_turn_heap(), map, data, wanderer_e, manhattan_distance);
+            place_npc(map->get_turn_heap(), map, data, sentry_e, manhattan_distance);
+            place_npc(map->get_turn_heap(), map, data, explorer_e, manhattan_distance);
+            place_npc(map->get_turn_heap(), map, data, swimmer_e, manhattan_distance);
             npc_count = 7;
         }
 
         while(npc_count < num_trainers) {
-            place_npc(map->get_turn_heap(), map, (trainer_type_e) (rand() % 7 + 1));
+            place_npc(map->get_turn_heap(), map, data, (trainer_type_e) (rand() % 7 + 1), manhattan_distance);
             npc_count++;
         }
     }

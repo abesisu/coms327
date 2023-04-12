@@ -28,7 +28,7 @@ std::ifstream *get_file(std::string filename)
     return file;
 }
 
-int Data::get_pokemon(Data &data)
+int Data::get_pokemon_data(Data &data)
 {
     int got_data = 0;
     int id;
@@ -39,7 +39,7 @@ int Data::get_pokemon(Data &data)
     int base_experience;
     int order;
     int is_default;
-    Pokemon *p;
+    PokemonData *pd;
     std::ifstream *pokemon_file = get_file("pokemon.csv");
     if (!pokemon_file) {
         return got_data;
@@ -63,7 +63,7 @@ int Data::get_pokemon(Data &data)
         std::getline(*pokemon_file, line);
         is_default = (line.empty()) ? INT_MAX : std::stoi(line);
 
-        p = new Pokemon(id,
+        pd = new PokemonData(id,
                         identifier,
                         species_id,
                         height,
@@ -71,7 +71,7 @@ int Data::get_pokemon(Data &data)
                         base_experience,
                         order,
                         is_default);
-        data.pokemon.push_back(*p);
+        data.pokemon_data.push_back(*pd);
     }
     got_data = 1;
 
@@ -455,7 +455,7 @@ int Data::get_experience(Data &data)
 int Data::get_data(Data &data)
 {
     int got_data;
-    got_data = get_pokemon(data);
+    got_data = get_pokemon_data(data);
     if (!got_data) {
         std::cerr << "Error: Could not get pokemon data." << std::endl;
     }

@@ -3,11 +3,10 @@
 #include <cstring>
 
 #include "world.h"
-#include "data.h"
 
-// static int32_t path_cmp(const void *key, const void *with) { // make heap compare nodes based on cost
-//     return ((path *) key)->get_cost() - ((path *) with)->get_cost();
-// }
+static int32_t path_cmp(const void *key, const void *with) { // make heap compare nodes based on cost
+    return ((path *) key)->get_cost() - ((path *) with)->get_cost();
+}
 
 chtype view[MAP_HEIGHT][MAP_WIDTH];
 
@@ -136,6 +135,57 @@ void render_view(map *map, coordinate_t location)
     refresh();
 }
 
+Pokemon *pick_starter(Data *data)
+{
+    int choice;
+    Pokemon *first = (Pokemon *)generate_pokemon(data, 
+                                                 rand() % 1092,
+                                                 rand() % 2,
+                                                 1,
+                                                 rand() % 8192 == 0 ? 1 : 0,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16);
+    Pokemon *second = (Pokemon *)generate_pokemon(data, 
+                                                  rand() % 1092,
+                                                  rand() % 2,
+                                                  1,
+                                                  rand() % 8192 == 0 ? 1 : 0,
+                                                  rand() % 16,
+                                                  rand() % 16,
+                                                  rand() % 16,
+                                                  rand() % 16,
+                                                  rand() % 16,
+                                                  rand() % 16);
+    Pokemon *third = (Pokemon *)generate_pokemon(data, 
+                                                 rand() % 1092,
+                                                 rand() % 2,
+                                                 1,
+                                                 rand() % 8192 == 0 ? 1 : 0,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16,
+                                                 rand() % 16);
+    
+    choice = choose_starter(first, second, third);
+
+    switch (choice) {
+        case 'a':
+            return first;
+        case 'b':
+            return second;
+        case 'c':
+            return third;
+        default:
+            return nullptr;
+    }
+}
+
 void place_gates(world *world)
 {
     if (world->get_location().y == 0) { // top of map
@@ -171,7 +221,7 @@ void place_gates(world *world)
     }
 }
 
-void change_map(world *world, pc *pc, char new_map)
+void change_map(world *world, Data *data, pc *pc, char new_map)
 {
     int fly_x, fly_y;
     int manhattan_distance;
@@ -212,15 +262,15 @@ void change_map(world *world, pc *pc, char new_map)
 
         place_gates(world);
         manhattan_distance = abs(world->get_location().x - START_X) + abs(world->get_location().y - START_Y);
-        map::generate_map(world->get_current_map(), world->get_current_map()->get_n(), world->get_current_map()->get_s(), world->get_current_map()->get_w(), world->get_current_map()->get_e(), manhattan_distance);
+        generate_map(world->get_current_map(), world->get_current_map()->get_n(), world->get_current_map()->get_s(), world->get_current_map()->get_w(), world->get_current_map()->get_e(), manhattan_distance);
 
         if (new_map == 'f') {
-            map::place_pc(world->get_current_map(), pc);
+            place_pc(world->get_current_map(), pc);
         }
-        map::trainer_map_init(world->get_current_map(), world->get_num_trainers(), pc); // init trainer_map, pc_pos, and turn_heap
+        trainer_map_init(world->get_current_map(), data, world->get_num_trainers(), pc, (Pokemon *)nullptr, manhattan_distance); // init trainer_map, pc_pos, and turn_heap
     } else if (new_map == 'f') {
         world->board[world->get_location().y][world->get_location().x]->trainer_map[pc->get_pos().y][pc->get_pos().x] = nullptr;
-        map::place_pc(world->board[world->get_location().y][world->get_location().x], pc);
+        place_pc(world->board[world->get_location().y][world->get_location().x], pc);
     }
 
     world->set_current_map(world->board[world->get_location().y][world->get_location().x]);
@@ -229,7 +279,7 @@ void change_map(world *world, pc *pc, char new_map)
     world->get_current_map()->set_pc_pos(pc->get_pos());
 }
 
-int pc_turn(world *world, pc *pc)
+int pc_turn(world *world, Data *data, pc *pc, int manhattan_distance)
 {
     int quit_game, valid, key;
     char new_map;
@@ -256,7 +306,7 @@ int pc_turn(world *world, pc *pc)
             case 'b':
             case '4':
             case 'h':
-                new_map = action::move_pc(world->get_current_map(), pc, key);
+                new_map = move_pc(world->get_current_map(), data, pc, key, manhattan_distance);
                 valid = 1;
                 break;
             case 'f':
@@ -270,11 +320,11 @@ int pc_turn(world *world, pc *pc)
                 valid = 1;
                 break;
             case '>':
-                action::enter_building(world->get_current_map(), pc);
+                enter_building(world->get_current_map(), pc);
                 valid = 1;
                 break;
             case 't':
-                action::trainer_info(world->get_current_map(), world->get_num_trainers());
+                trainer_info(world->get_current_map(), world->get_num_trainers());
                 render_view(world->get_current_map(), world->get_location());
                 valid = 0;
                 continue;
@@ -293,18 +343,18 @@ int pc_turn(world *world, pc *pc)
     }
 
     if (new_map != 0) {
-        change_map(world, pc, new_map);
+        change_map(world, data, pc, new_map);
     }
 
     return quit_game;
 }
 
-void game_loop(heap_t *path_heap, world *world)
+void game_loop(heap_t *path_heap, world *world, Data *data)
 {
     trainer *t;
     pc *p;
     npc *n;
-
+    int manhattan_distance;
     int x, y, quit_game;
     path swimmer_path[MAP_HEIGHT][MAP_WIDTH];
 
@@ -322,33 +372,34 @@ void game_loop(heap_t *path_heap, world *world)
         t = (trainer *) heap_remove_min(world->get_current_map()->get_turn_heap());
 
         if (t->get_type() != pc_e) {
-            n = new npc(t);
+            n = (npc *)t;
         }
 
         switch (t->get_type()) {
             case pc_e:
-                p = new pc(t);
-                quit_game = pc_turn(world, p);
+                p = (pc *)t;
+                manhattan_distance = abs(world->get_location().x - START_X) + abs(world->get_location().y - START_Y);
+                quit_game = pc_turn(world, data, p, manhattan_distance);
                 t = p;
                 break;
             case hiker_e:
-                action::move_dijkstra_trainer(path_heap, world->hiker_path, world->get_current_map(), n);
+                move_dijkstra_trainer(path_heap, world->hiker_path, world->get_current_map(), n, data);
                 break;
             case rival_e:
-                action::move_dijkstra_trainer(path_heap, world->rival_path, world->get_current_map(), n);
+                move_dijkstra_trainer(path_heap, world->rival_path, world->get_current_map(), n, data);
                 break;
             case pacer_e:
-                action::move_pacer(world->get_current_map(), n);
+                move_pacer(world->get_current_map(), n, data);
                 break;
             case wanderer_e:
             case explorer_e:
-                action::move_wanderer_explorer(world->get_current_map(), n);
+                move_wanderer_explorer(world->get_current_map(), n, data);
                 break;
             case sentry_e:
                 n->set_next_turn(n->get_next_turn() + 15);
                 break;
             case swimmer_e:
-                action::move_swimmer(path_heap, swimmer_path, world->get_current_map(), n, world->get_current_map()->get_pc_pos());
+                move_swimmer(path_heap, swimmer_path, world->get_current_map(), n, world->get_current_map()->get_pc_pos(), data);
                 break;
         }
         if (t->get_type() != pc_e) {
@@ -370,191 +421,64 @@ void game_loop(heap_t *path_heap, world *world)
 
 int main(int argc, char *argv[])
 {
-    // int manhattan_distance;
-    // heap_t path_heap;
-    // world *w;
+    int manhattan_distance;
+    heap_t path_heap;
+    world *w;
     int got_data;
     Data data;
-
-    // srand(time(nullptr));
-
-    // init_terminal();
-
-    // init_view();
-
-    // heap_init(&path_heap, path_cmp, nullptr);
+    Pokemon *starter;
 
     if (argc == 2) {
-        // if (strcmp(argv[1], "--numtrainers" == 0)) {
-        //      w = new world(atoi(argv[2]));
-        // } else 
-        if (strcmp(argv[1], "pokemon") == 0) { 
-            got_data = data.get_pokemon(data);
-            Pokemon *p;
+        if (strcmp(argv[1], "--numtrainers") == 0) {
+            w = new world(atoi(argv[2]));
+            got_data = data.get_data(data);
 
             if (!got_data) {
-                std::cerr << "Error: Could not get pokemon data." << std::endl;
-            } else {
-                std::vector<Pokemon>::size_type i;
-                for (i = 0; i < data.pokemon.size(); i++) {
-                    p = &data.pokemon[i];
-                    std::cout << (*p).id << ", " << (*p).identifier << ", " << (*p).species_id << ", " 
-                              <<(*p).height << ", " << (*p).weight << ", " << (*p).base_experience << ", " 
-                              << (*p).order << ", " << (*p).is_default << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "pokemon_types") == 0) {
-            got_data = data.get_pokemon_types(data);
-            PokemonType *pt;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get pokemon types data." << std::endl;
-            } else {
-                std::vector<PokemonType>::size_type i;
-                for (i = 0; i < data.pokemon_types.size(); i++) {
-                    pt = &data.pokemon_types[i];
-                    std::cout << (*pt).pokemon_id << ", " << (*pt).type_id << ", " << (*pt).slot << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "type_names") == 0) {
-            got_data = data.get_type_names(data);
-            TypeName *tn;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get type names data." << std::endl;
-            } else {
-                std::vector<TypeName>::size_type i;
-                for (i = 0; i < data.type_names.size(); i++) {
-                    tn = &data.type_names[i];
-                    std::cout << (*tn).type_id << ", " << (*tn).local_language_id << ", " << (*tn).name << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "pokemon_species") == 0) {
-            got_data = data.get_pokemon_species(data);
-            PokemonSpecies *ps;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get pokemon species data." << std::endl;
-            } else {
-                std::vector<PokemonSpecies>::size_type i;
-                for (i = 0; i < data.pokemon_species.size(); i++) {
-                    ps = &data.pokemon_species[i];
-                    std::cout << (*ps).id << ", " << (*ps).identifier << ", " << (*ps).generation_id << ", " 
-                              << (*ps).evolves_from_species_id << ", " << (*ps).evolution_chain_id << ", " 
-                              << (*ps).color_id << ", " << (*ps).shape_id << ", " << (*ps).habitat_id << ", " 
-                              << (*ps).gender_rate << ", " << (*ps).capture_rate << ", " << (*ps).base_happiness 
-                              << ", " << (*ps).is_baby << ", " << (*ps).hatch_counter << ", " 
-                              << (*ps).has_gender_differences << ", " << (*ps).growth_rate_id << ", " 
-                              << (*ps).forms_switchable << ", " << (*ps).is_legendary << ", " 
-                              << (*ps).is_mythical << ", " << (*ps).order << ", " << (*ps).conquest_order << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "pokemon_stats") == 0) {
-            got_data = data.get_pokemon_stats(data);
-            PokemonStat *ps;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get pokemon stats data." << std::endl;
-            } else {
-                std::vector<PokemonStat>::size_type i;
-                for (i = 0; i < data.pokemon_stats.size(); i++) {
-                    ps = &data.pokemon_stats[i];
-                    std::cout << (*ps).pokemon_id << ", " << (*ps).stat_id << ", " 
-                              << (*ps).base_stat << ", " << (*ps).effort << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "stats") == 0) {
-            got_data = data.get_stats(data);
-            Stat *s;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get stats data." << std::endl;
-            } else {
-                std::vector<Stat>::size_type i;
-                for (i = 0; i < data.stats.size(); i++) {
-                    s = &data.stats[i];
-                    std::cout << (*s).id << ", " << (*s).damage_class_id << ", " << (*s).identifier << ", " 
-                              << (*s).is_battle_only << ", " << (*s).game_index << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "pokemon_moves") == 0) {
-            got_data = data.get_pokemon_moves(data);
-            PokemonMove *pm;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get pokemon moves data." << std::endl;
-            } else {
-                std::vector<PokemonMove>::size_type i;
-                for (i = 0; i < data.pokemon_moves.size(); i++) {
-                    pm = &data.pokemon_moves[i];
-                    std::cout << (*pm).pokemon_id << ", " << (*pm).version_group_id << ", " << (*pm).move_id << ", " 
-                              << (*pm).pokemon_move_method_id << ", " << (*pm).level << ", " << (*pm).order << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "moves") == 0) {
-            got_data = data.get_moves(data);
-            Move *m;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get moves data." << std::endl;
-            } else {
-                std::vector<Move>::size_type i;
-                for (i = 0; i < data.moves.size(); i++) {
-                    m = &data.moves[i];
-                    std::cout << (*m).id << ", " << (*m).identifier << ", " << (*m).generation_id << ", " << (*m).type_id << ", " 
-                              << (*m).power << ", " << (*m).pp << ", " << (*m).accuracy << ", " << (*m).priority << ", " 
-                              << (*m).target_id << ", " << (*m).damage_class_id << ", " << (*m).effect_id << ", " 
-                              << (*m).effect_chance << ", " << (*m).contest_type_id << ", " << (*m).contest_effect_id << ", " 
-                              << (*m).super_contest_effect_id << std::endl;
-                }
-            }
-        } else if (strcmp(argv[1], "experience") == 0) { 
-            got_data = data.get_experience(data);
-            Experience *e;
-
-            if (!got_data) {
-                std::cerr << "Error: Could not get experience data." << std::endl;
-            } else {
-                std::vector<Experience>::size_type i;
-                for (i = 0; i < data.experience.size(); i++) {
-                    e = &data.experience[i];
-                    std::cout << (*e).growth_rate_id << ", " << (*e).level << ", " << (*e).experience << std::endl;
-                }
+                std::cerr << "Error: Could not get data." << std::endl;
             }
         } else {
-            std::cerr << "Usage: \"./play <object>\" or \"./play\" where <object> is one of" << "\n"
-                      << "pokemon, moves, pokemon_moves, pokemon_species, experience, type_names, pokemon stats, stats or pokemon_types" << std::endl;
+            std::cerr << "Usage: \"./play --numtrainers <integer>\" or \"./play\"" << std::endl;
 
-            got_data = -1;
+            got_data = 0;
         }
     } else if (argc == 1) {
-        // w = new world(10);
-       got_data = data.get_data(data);
+        w = new world(10);
+        got_data = data.get_data(data);
 
-       if (!got_data) {
-           std::cerr << "Error: Could not get data." << std::endl;
-       }
+        if (!got_data) {
+            std::cerr << "Error: Could not get data." << std::endl;
+
+            got_data = 0;
+        }
     } else {
-        std::cerr << "Usage: \"./play <object>\" or \"./play\" where <object> is one of" << "\n"
-                  << "pokemon, moves, pokemon_moves, pokemon_species, experience, type_names, pokemon stats, stats or pokemon_types" << std::endl;
+        std::cerr << "Usage: \"./play --numtrainers <integer>\" or \"./play\"" << std::endl;
 
-        got_data = -1;
+        got_data = 0;
     }
 
-    return got_data;
+    if (got_data) {
+        srand(time(nullptr));
 
-    // place_gates(w);
-    // manhattan_distance = abs(w->get_location().x - START_X) + abs(w->get_location().y - START_Y);
-    // map::generate_map(w->get_current_map(), w->get_current_map()->get_n(), w->get_current_map()->get_s(), w->get_current_map()->get_w(), w->get_current_map()->get_e(), manhattan_distance);
-    // map::trainer_map_init(w->get_current_map(), w->get_num_trainers(), nullptr); // init trainer_map, pc_pos, and turn_heap
+        init_terminal();
 
-    // game_loop(&path_heap, w);
+        init_view();
 
-    // endwin();
+        heap_init(&path_heap, path_cmp, nullptr);
 
-    // heap_delete(&path_heap);
+        place_gates(w);
+        manhattan_distance = abs(w->get_location().x - START_X) + abs(w->get_location().y - START_Y);
+        generate_map(w->get_current_map(), w->get_current_map()->get_n(), w->get_current_map()->get_s(), w->get_current_map()->get_w(), w->get_current_map()->get_e(), manhattan_distance);
+        starter = (Pokemon *)pick_starter(&data);
+        trainer_map_init(w->get_current_map(), &data, w->get_num_trainers(), (pc *)nullptr, (Pokemon *)starter, 0); // init trainer_map, pc_pos, and turn_heap
 
-    // printf("Thanks for playing!\n");
+        game_loop(&path_heap, w, &data);
 
-    // return 0;
+        endwin();
+
+        heap_delete(&path_heap);
+
+        std::cout << "Thanks for playing!" << std::endl;
+    } 
+
+    return !got_data;
 }

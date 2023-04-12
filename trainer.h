@@ -2,6 +2,7 @@
 #define TRAINER_H
 
 #include "util.h"
+#include "pokemon.h"
 
 typedef enum trainer_type {
     pc_e,
@@ -21,8 +22,9 @@ class trainer {
         int seq_num;
         coordinate_t pos;
         coordinate_t dir;
+        Pokemon *party[6];
     public:
-        explicit trainer(trainer_type_e t) : pos(), dir()
+        explicit trainer(trainer_type_e t) : pos(), dir(), party()
         {
             type = t;
             next_turn = 0;
@@ -51,13 +53,28 @@ class trainer {
         void set_dir_y(int y) { dir.y = y; }
         void set_dir_x(int x) { dir.x = x; }
         coordinate_t get_dir() { return dir; }
+        Pokemon *get_pokemon(int i) { return party[i]; }
 };
 
 class pc : public trainer {
     public:
-        pc() : trainer(pc_e) { seq_num = 0; };
+        pc(Pokemon *starter) : trainer(pc_e) 
+        { 
+            seq_num = 0; 
+            party[0] = starter;
+        };
         explicit pc(trainer *t) : trainer(t) {}
         ~pc() {}
+        void add_pokemon(Pokemon *p) 
+        {
+            int i;
+            for (i = 0; i < 6; i++) { 
+                if (party[i] == 0) { 
+                    party[i] = p; 
+                    break; 
+                } 
+            } 
+        }
 };
 
 class npc : public trainer {
@@ -91,6 +108,37 @@ class npc : public trainer {
                     seq_num = 0;
                     break;
             }
+        }
+        npc(Data *data, trainer_type_e t, int manhattan_distance) : trainer(t) 
+        {
+            switch (t)
+            {
+                case hiker_e:
+                    seq_num = 1;
+                    break;
+                case rival_e:
+                    seq_num = 2;
+                    break;
+                case pacer_e:
+                    seq_num = 3;
+                    break;
+                case wanderer_e:
+                    seq_num = 4;
+                    break;
+                case sentry_e:
+                    seq_num = 5;
+                    break;
+                case explorer_e:
+                    seq_num = 6;
+                    break;
+                case swimmer_e:
+                    seq_num = 7;
+                    break;
+                default:
+                    seq_num = 0;
+                    break;
+            }
+            generate_npc_party(data, party, manhattan_distance);
         }
         ~npc() {}
 };

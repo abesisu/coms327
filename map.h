@@ -65,9 +65,6 @@ class map {
                 }
             }
         }
-        static void generate_map(map *map, int n, int s, int w, int e, int manhattan_distance);
-        static void trainer_map_init(map *map, int num_trainers, pc *pc);
-        static void place_pc(map *map, pc *pc);
         int get_n() const { return n; }
         void set_n(int north) { n = north; }
         int get_s() const { return s; }
@@ -83,5 +80,10 @@ class map {
         int get_pc_turn() const { return pc_turn; }
         void set_pc_turn(int turn) { pc_turn = turn; }
 };
+
+void generate_map(map *map, int n, int s, int w, int e, int manhattan_distance);
+void trainer_map_init(map *map, Data *data, int num_trainers, pc *pc, Pokemon *starter, int manhattan_distance);
+void place_pc(map *map, pc *pc);
+void place_npc(heap_t *turn_heap, map *map, Data *data, trainer_type_e type, int manhattan_distance);
 
 #endif

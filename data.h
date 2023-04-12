@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-class Pokemon {
+class PokemonData {
 public:
     int id;
     std::string identifier;
@@ -14,7 +14,7 @@ public:
     int base_experience;
     int order;
     int is_default;
-    Pokemon(int id,
+    PokemonData(int id,
             std::string identifier,
             int species_id,
             int height,
@@ -261,7 +261,7 @@ public:
 
 class Data {
 public:
-    std::vector<Pokemon> pokemon;
+    std::vector<PokemonData> pokemon_data;
     std::vector<PokemonType> pokemon_types;
     std::vector<TypeName> type_names;
     std::vector<PokemonSpecies> pokemon_species;
@@ -271,7 +271,7 @@ public:
     std::vector<Move> moves;
     std::vector<Experience> experience;
     int get_data(Data &data);
-    int get_pokemon(Data &data);
+    int get_pokemon_data(Data &data);
     int get_pokemon_types(Data &data);
     int get_type_names(Data &data);
     int get_pokemon_species(Data &data);
@@ -282,7 +282,7 @@ public:
     int get_experience(Data &data);
     ~Data() 
     {
-        pokemon.clear();
+        pokemon_data.clear();
         pokemon_types.clear();
         type_names.clear();
         pokemon_species.clear();

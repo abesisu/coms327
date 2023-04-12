@@ -6,7 +6,6 @@
 
 int check_random_turn(int random_direction, map *map, coordinate_t pos, trainer_type_e type) {
     int check, terrain_cost;
-    path p;
 
     check = 0;
 
@@ -16,7 +15,7 @@ int check_random_turn(int random_direction, map *map, coordinate_t pos, trainer_
                 check = 1;
             }
         } else if (type == explorer_e) {
-            terrain_cost = p.calculate_terrain_cost(map->terrain_map[pos.y - 1][pos.x], type);
+            terrain_cost = path::calculate_terrain_cost(map->terrain_map[pos.y - 1][pos.x], type);
             if (terrain_cost != INT_MAX && map->trainer_map[pos.y - 1][pos.x] == nullptr) {
                 check = 1;
             }
@@ -27,7 +26,7 @@ int check_random_turn(int random_direction, map *map, coordinate_t pos, trainer_
                 check = 1;
             }
         } else if (type == explorer_e) {
-            terrain_cost = p.calculate_terrain_cost(map->terrain_map[pos.y][pos.x + 1], type);
+            terrain_cost = path::calculate_terrain_cost(map->terrain_map[pos.y][pos.x + 1], type);
             if (terrain_cost != INT_MAX && map->trainer_map[pos.y][pos.x + 1] == nullptr) {
                 check = 1;
             }
@@ -38,7 +37,7 @@ int check_random_turn(int random_direction, map *map, coordinate_t pos, trainer_
                 check = 1;
             }
         } else if (type == explorer_e) {
-            terrain_cost = p.calculate_terrain_cost(map->terrain_map[pos.y + 1][pos.x], type);
+            terrain_cost = path::calculate_terrain_cost(map->terrain_map[pos.y + 1][pos.x], type);
             if (terrain_cost != INT_MAX && map->trainer_map[pos.y + 1][pos.x] == nullptr) {
                 check = 1;
             }
@@ -59,7 +58,7 @@ int check_random_turn(int random_direction, map *map, coordinate_t pos, trainer_
     return check;
 }
 
-void random_turn(map *map, trainer *t) {
+void random_turn(map *map, trainer *t, Data *data) {
     int random_direction, valid_direction;
     int num_fail;
     int battle_outcome;
@@ -81,11 +80,11 @@ void random_turn(map *map, trainer *t) {
         t->set_dir_x(0);
         if (map->trainer_map[t->get_pos().y - 1][t->get_pos().x    ] != nullptr &&
             map->trainer_map[t->get_pos().y - 1][t->get_pos().x    ]->get_type() == pc_e) {
-            battle_outcome = action::battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], (npc *)t, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                random_turn(map, t);
+                random_turn(map, t, data);
             } else if (battle_outcome == -1) { // npc lost
                 t->set_next_turn(-1);
             }
@@ -99,11 +98,11 @@ void random_turn(map *map, trainer *t) {
         t->set_dir_x(1);
         if (map->trainer_map[t->get_pos().y    ][t->get_pos().x + 1] != nullptr &&
             map->trainer_map[t->get_pos().y    ][t->get_pos().x + 1]->get_type() == pc_e) {
-            battle_outcome = action::battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], (npc *)t, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                random_turn(map, t);
+                random_turn(map, t, data);
             } else if (battle_outcome == -1) { // npc lost
                 t->set_next_turn(-1);
             }
@@ -117,11 +116,11 @@ void random_turn(map *map, trainer *t) {
         t->set_dir_x(0);
         if (map->trainer_map[t->get_pos().y + 1][t->get_pos().x    ] != nullptr &&
             map->trainer_map[t->get_pos().y + 1][t->get_pos().x    ]->get_type() == pc_e) {
-            battle_outcome = action::battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], (npc *)t, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                random_turn(map, t);
+                random_turn(map, t, data);
             } else if (battle_outcome == -1) { // npc lost
                 t->set_next_turn(-1);
             }
@@ -135,11 +134,11 @@ void random_turn(map *map, trainer *t) {
         t->set_dir_x(-1);
         if (map->trainer_map[t->get_pos().y    ][t->get_pos().x - 1] != nullptr &&
             map->trainer_map[t->get_pos().y    ][t->get_pos().x - 1]->get_type() == pc_e) {
-            battle_outcome = action::battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], (npc *)t, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                random_turn(map, t);
+                random_turn(map, t, data);
             } else if (battle_outcome == -1) { // npc lost
                 t->set_next_turn(-1);
             }
@@ -186,13 +185,42 @@ void destroy_win(WINDOW *local_win)
     delwin(local_win);
 }
 
-void action::enter_building(map *map, pc *pc)
+int choose_starter(Pokemon *first, Pokemon *second, Pokemon *third)
+{
+    int key;
+    mvprintw(0, 1, "Choose your starter Pokemon. Press a, b, or c to select.");
+    mvprintw(1, 1, first->get_name().c_str());
+    mvprintw(2, 1, second->get_name().c_str());
+    mvprintw(3, 1, third->get_name().c_str());
+    refresh();
+
+    while((key = getch()))
+    {
+        if (key == 'a')
+            break;
+        else if (key == 'b')
+            break;
+        else if (key == 'c')
+            break;
+        else
+            continue;
+        mvprintw(0, 1, "Choose your starter Pokemon. Press a, b, or c to select.");
+        mvprintw(1, 1, first->get_name().c_str());
+        mvprintw(2, 1, second->get_name().c_str());
+        mvprintw(3, 1, third->get_name().c_str());
+        refresh();
+    }
+
+    return key;
+}
+
+void enter_building(map *map, pc *pc)
 {
     int key;
     WINDOW *building_win;
-
     if (map->terrain_map[pc->get_pos().y][pc->get_pos().x] == pokecenter || map->terrain_map[pc->get_pos().y][pc->get_pos().x] == pokemart) {
         building_win = create_newwin(24, 80, 0, 0);
+        keypad(building_win, TRUE);
         mvwprintw(building_win, 1, 1, "You are in a building. Press '<' to exit.");
         wrefresh(building_win);
 
@@ -208,7 +236,7 @@ void action::enter_building(map *map, pc *pc)
     }
 }
 
-void action::trainer_info(map *map, int num_trainers)
+void trainer_info(map *map, int num_trainers)
 {
     int x, y, npc_rise, npc_run, key, i, shift;
     char trainer_char;
@@ -333,18 +361,79 @@ void action::trainer_info(map *map, int num_trainers)
     destroy_win(trainer_win);
 }
 
-int action::battle()
+int battle(pc *pc, npc *npc, Data *data)
 {
-    int key;
+    int key, i, row;
     WINDOW *battle_win;
 
     battle_win = create_newwin(24, 80, 0, 0);
-    mvwprintw(battle_win, 1, 1, "You are in a battle. Press '<' to exit.");
+    keypad(battle_win, TRUE);
+    row = 2;
+    for (i = 0; i < 6; i++) {
+        if (!pc->get_pokemon(i)) {
+            break;
+        }
+        mvwprintw(battle_win, 1, 1, "You are in a battle. Press '<' to exit.");
+        mvwprintw(battle_win, row, 1, "%s: Level: %d HP: %d", pc->get_pokemon(i)->get_name().c_str(), 
+                                                            pc->get_pokemon(i)->get_level(),
+                                                            pc->get_pokemon(i)->get_hp());
+        if (pc->get_pokemon(i)->get_move(1) != 0) {
+            mvwprintw(battle_win, row + 1, 1, "Moves: %s, %s", data->moves[pc->get_pokemon(i)->get_move(0) - 1].identifier.c_str(), data->moves[pc->get_pokemon(i)->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+        } else {
+            mvwprintw(battle_win, row + 1, 1, "Moves: %s", data->moves[pc->get_pokemon(i)->get_move(0) - 1].identifier.c_str());
+        }
+        row = row + 2;
+    }
+    row = 2;
+    for (i = 0; i < 6; i++) {
+        if (!npc->get_pokemon(i)) {
+            break;
+        }
+        mvwprintw(battle_win, row, 40, "%s: Level: %d HP: %d", npc->get_pokemon(i)->get_name().c_str(), 
+                                                            npc->get_pokemon(i)->get_level(),
+                                                            npc->get_pokemon(i)->get_hp());
+        if (npc->get_pokemon(i)->get_move(1) != 0) {
+            mvwprintw(battle_win, row + 1, 40, "Moves: %s, %s", data->moves[npc->get_pokemon(i)->get_move(0) - 1].identifier.c_str(), data->moves[npc->get_pokemon(i)->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+        } else {
+            mvwprintw(battle_win, row + 1, 40, "Moves: %s", data->moves[npc->get_pokemon(i)->get_move(0) - 1].identifier.c_str());
+        }
+        row = row + 2;
+    }
     wrefresh(battle_win);
 
     while((key = getch()) != '<')
     {
-        wprintw(battle_win, "You are in a battle. Press '<' to exit.");
+        row = 2;
+        for (i = 0; i < 6; i++) {
+            if (!pc->get_pokemon(i)) {
+                break;
+            }
+            mvwprintw(battle_win, 1, 1, "You are in a battle. Press '<' to exit.");
+            mvwprintw(battle_win, row, 1, "%s: Level: %d HP: %d", pc->get_pokemon(i)->get_name().c_str(), 
+                                                                pc->get_pokemon(i)->get_level(),
+                                                                pc->get_pokemon(i)->get_hp());
+            if (pc->get_pokemon(i)->get_move(1) != 0) {
+                mvwprintw(battle_win, row + 1, 1, "Moves: %s, %s", data->moves[pc->get_pokemon(i)->get_move(0) - 1].identifier.c_str(), data->moves[pc->get_pokemon(i)->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+            } else {
+                mvwprintw(battle_win, row + 1, 1, "Moves: %s", data->moves[pc->get_pokemon(i)->get_move(0) - 1].identifier.c_str());
+            }
+            row = row + 2;
+        }
+        row = 2;
+        for (i = 0; i < 6; i++) {
+            if (!npc->get_pokemon(i)) {
+                break;
+            }
+            mvwprintw(battle_win, row, 40, "%s: Level: %d HP: %d", npc->get_pokemon(i)->get_name().c_str(), 
+                                                                npc->get_pokemon(i)->get_level(),
+                                                                npc->get_pokemon(i)->get_hp());
+            if (npc->get_pokemon(i)->get_move(1) != 0) {
+                mvwprintw(battle_win, row + 1, 40, "Moves: %s, %s", data->moves[npc->get_pokemon(i)->get_move(0) - 1].identifier.c_str(), data->moves[npc->get_pokemon(i)->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+            } else {
+                mvwprintw(battle_win, row + 1, 40, "Moves: %s", data->moves[npc->get_pokemon(i)->get_move(0) - 1].identifier.c_str());
+            }
+            row = row + 2;
+        }
         wrefresh(battle_win);
     }
 
@@ -352,13 +441,81 @@ int action::battle()
 
     return 0;
 }
+/*
+    When encountering pokemon, we’ll add a placeholder function for the battle and capture sequence in
+    which we’ll print the pokemon’s level, stats, and moves and pause for input (escape, any key, etc.).
+*/
+Pokemon *encounter(Data *data, int manhattan_distance) 
+{
+    int key;
+    WINDOW *encounter_win;
+    int level;
+    Pokemon *pokemon;
+    level = calculate_level(manhattan_distance);
+    pokemon = (Pokemon *)generate_pokemon(data, 
+                                          rand() % 1092,
+                                          rand() % 2,
+                                          level,
+                                          rand() % 8192 == 0 ? 1 : 0,
+                                          rand() % 16,
+                                          rand() % 16,
+                                          rand() % 16,
+                                          rand() % 16,
+                                          rand() % 16,
+                                          rand() % 16);
 
-char action::move_pc(map *map, pc *pc, int input)
+    encounter_win = create_newwin(24, 80, 0, 0);
+    mvwprintw(encounter_win, 1, 1, "You encountered a Pokemon! Press the escape key to exit.");
+    mvwprintw(encounter_win, 2, 1, "%s:", pokemon->get_name().c_str());
+    mvwprintw(encounter_win, 3, 1, "Gender: %d", pokemon->get_gender());
+    mvwprintw(encounter_win, 4, 1, "Is Shiny: %d", pokemon->get_is_shiny());
+    mvwprintw(encounter_win, 5, 1, "Level: %d", pokemon->get_level());
+    mvwprintw(encounter_win, 6, 1, "HP: %d", pokemon->get_hp());
+    mvwprintw(encounter_win, 7, 1, "Attack: %d", pokemon->get_attack());
+    mvwprintw(encounter_win, 8, 1, "Defense: %d", pokemon->get_defense());
+    mvwprintw(encounter_win, 9, 1, "Special Attack: %d", pokemon->get_special_attack());
+    mvwprintw(encounter_win, 10, 1, "Special Defense: %d", pokemon->get_special_defense());
+    mvwprintw(encounter_win, 11, 1, "Speed: %d", pokemon->get_speed());
+    if (pokemon->get_move(1) != 0) {
+        mvwprintw(encounter_win, 12, 1, "Moves: %s, %s", data->moves[pokemon->get_move(0) - 1].identifier.c_str(), data->moves[pokemon->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+    } else {
+        mvwprintw(encounter_win, 12, 1, "Moves: %s", data->moves[pokemon->get_move(0) - 1].identifier.c_str());
+    }
+    wrefresh(encounter_win);
+
+    while((key = getch()) != 27)
+    {
+        mvwprintw(encounter_win, 1, 1, "You encountered a Pokemon! Press the escape key to exit.");
+        mvwprintw(encounter_win, 2, 1, "%s:", pokemon->get_name().c_str());
+        mvwprintw(encounter_win, 3, 1, "Gender: %d", pokemon->get_gender());
+        mvwprintw(encounter_win, 4, 1, "Is Shiny: %d", pokemon->get_is_shiny());
+        mvwprintw(encounter_win, 5, 1, "Level: %d", pokemon->get_level());
+        mvwprintw(encounter_win, 6, 1, "HP: %d", pokemon->get_hp());
+        mvwprintw(encounter_win, 7, 1, "Attack: %d", pokemon->get_attack());
+        mvwprintw(encounter_win, 8, 1, "Defense: %d", pokemon->get_defense());
+        mvwprintw(encounter_win, 9, 1, "Special Attack: %d", pokemon->get_special_attack());
+        mvwprintw(encounter_win, 10, 1, "Special Defense: %d", pokemon->get_special_defense());
+        mvwprintw(encounter_win, 11, 1, "Speed: %d", pokemon->get_speed());
+        if (pokemon->get_move(1) != 0) {
+            mvwprintw(encounter_win, 12, 1, "Moves: %s, %s", data->moves[pokemon->get_move(0) - 1].identifier.c_str(), data->moves[pokemon->get_move(1) - 1].identifier.c_str()); // subtract one because the id is 1 off of data vector index for corresponding move
+        } else {
+            mvwprintw(encounter_win, 12, 1, "Moves: %s", data->moves[pokemon->get_move(0) - 1].identifier.c_str());
+        }
+        wrefresh(encounter_win);
+    }
+
+    destroy_win(encounter_win);
+
+    return 0;
+}
+
+char move_pc(map *map, Data *data, pc *pc, int input, int manhattan_distance)
 {
     if (map->get_turn_heap()) {}
     char ret_val;
     coordinate_t new_pos;
     int battle_outcome;
+    Pokemon *pokemon_captured;
 
     ret_val = 0;
 
@@ -404,13 +561,18 @@ char action::move_pc(map *map, pc *pc, int input)
         
         if (map->trainer_map[new_pos.y][new_pos.x] != nullptr) {
             if (map->trainer_map[new_pos.y][new_pos.x]->get_next_turn() > -1) {
-                battle_outcome = battle();
+                battle_outcome = battle(pc, (npc *)map->trainer_map[new_pos.y][new_pos.x], data);
 
                 if (battle_outcome == 1) { // npc won
                     pc->set_next_turn(-1);
                 } else if (battle_outcome == -1) { // npc lost
                     map->trainer_map[new_pos.y][new_pos.x]->set_next_turn(-1);
                 }
+            }
+        } else if (rand() % 10 < 1 && map->terrain_map[new_pos.y][new_pos.x] == tall_grass) {
+            pokemon_captured = encounter(data, manhattan_distance);
+            if (pokemon_captured) {
+                pc->add_pokemon(pokemon_captured);
             }
         } else {
             map->trainer_map[pc->get_pos().y][pc->get_pos().x] = nullptr;
@@ -427,7 +589,7 @@ char action::move_pc(map *map, pc *pc, int input)
     return ret_val;
 }
 
-void action::move_dijkstra_trainer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH], map *map, npc *npc)
+void move_dijkstra_trainer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH], map *map, npc *npc, Data *data)
 {
     path *cheapest_path;
     int battle_outcome;
@@ -461,7 +623,7 @@ void action::move_dijkstra_trainer(heap_t *path_heap, path path_map[MAP_HEIGHT][
     if (cheapest_path->get_cost() == 0) {
         cheapest_path = &path_map[npc->get_pos().y    ][npc->get_pos().x    ];
 
-        battle_outcome = battle();
+        battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], npc, data);
 
         if (battle_outcome == 1) { // npc won
             map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
@@ -478,7 +640,7 @@ void action::move_dijkstra_trainer(heap_t *path_heap, path path_map[MAP_HEIGHT][
     }
 }
 
-void action::move_wanderer_explorer(map *map, npc *npc)
+void move_wanderer_explorer(map *map, npc *npc, Data *data)
 {
     int move_cost, battle_outcome;
     terrain_e current_terrain;
@@ -497,19 +659,19 @@ void action::move_wanderer_explorer(map *map, npc *npc)
                 npc->set_pos_y(npc->get_pos().y - 1);
                 map->trainer_map[npc->get_pos().y][npc->get_pos().x] = npc;
             } else if (map->trainer_map[npc->get_pos().y - 1][npc->get_pos().x    ]->get_type() == pc_e) {
-                battle_outcome = battle();
+                battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], npc, data);
 
                 if (battle_outcome == 1) { // npc won
                     map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                    random_turn(map, npc);
+                    random_turn(map, npc, data);
                 } else if (battle_outcome == -1) { // npc lost
                     npc->set_next_turn(-1);
                 }
             } else {
-                random_turn(map, npc);
+                random_turn(map, npc, data);
             }
         } else {
-            random_turn(map, npc);
+            random_turn(map, npc, data);
         }
         // just starting or already going right and need to continue
     } else if (npc->get_dir().x >= 0 && npc->get_dir().y == 0) {
@@ -523,19 +685,19 @@ void action::move_wanderer_explorer(map *map, npc *npc)
                 npc->set_pos_x(npc->get_pos().x + 1);
                 map->trainer_map[npc->get_pos().y][npc->get_pos().x] = npc;
             }  else if (map->trainer_map[npc->get_pos().y    ][npc->get_pos().x + 1]->get_type() == pc_e) {
-                battle_outcome = battle();
+                battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], npc, data);
 
                 if (battle_outcome == 1) { // npc won
                     map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                    random_turn(map, npc);
+                    random_turn(map, npc, data);
                 } else if (battle_outcome == -1) { // npc lost
                     npc->set_next_turn(-1);
                 }
             } else {
-                random_turn(map, npc);
+                random_turn(map, npc, data);
             }
         } else {
-            random_turn(map, npc);
+            random_turn(map, npc, data);
         }
         // just starting or already going down and need to continue
     } else if (npc->get_dir().x == 0 && npc->get_dir().y >= 0) {
@@ -549,19 +711,19 @@ void action::move_wanderer_explorer(map *map, npc *npc)
                 npc->set_pos_y(npc->get_pos().y + 1);
                 map->trainer_map[npc->get_pos().y][npc->get_pos().x] = npc;
             } else if (map->trainer_map[npc->get_pos().y + 1][npc->get_pos().x    ]->get_type() == pc_e) {
-                battle_outcome = battle();
+                battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], npc, data);
 
                 if (battle_outcome == 1) { // npc won
                     map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                    random_turn(map, npc);
+                    random_turn(map, npc, data);
                 } else if (battle_outcome == -1) { // npc lost
                     npc->set_next_turn(-1);
                 }
             } else {
-                random_turn(map, npc);
+                random_turn(map, npc, data);
             }
         } else {
-            random_turn(map, npc);
+            random_turn(map, npc, data);
         }
         // just starting or already going left and need to continue
     } else if (npc->get_dir().x <= 0 && npc->get_dir().y == 0) {
@@ -575,19 +737,19 @@ void action::move_wanderer_explorer(map *map, npc *npc)
                 npc->set_pos_x(npc->get_pos().x - 1);
                 map->trainer_map[npc->get_pos().y][npc->get_pos().x] = npc;
             } else if (map->trainer_map[npc->get_pos().y    ][npc->get_pos().x - 1]->get_type() == pc_e) {
-                battle_outcome = battle();
+                battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], npc, data);
 
                 if (battle_outcome == 1) { // npc won
                     map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                    random_turn(map, npc);
+                    random_turn(map, npc, data);
                 } else if (battle_outcome == -1) { // npc lost
                     npc->set_next_turn(-1);
                 }
             } else {
-                random_turn(map, npc);
+                random_turn(map, npc, data);
             }
         } else {
-            random_turn(map, npc);
+            random_turn(map, npc, data);
         }
     }
 
@@ -596,7 +758,7 @@ void action::move_wanderer_explorer(map *map, npc *npc)
     }
 }
 
-void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH], map *map, npc *m, coordinate_t pc_pos)
+void move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH], map *map, npc *m, coordinate_t pc_pos, Data *data)
 {
     int battle_outcome;
 
@@ -609,7 +771,7 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
          map->terrain_map[pc_pos.y + 1][pc_pos.x    ] == bridge) ||
         (map->terrain_map[pc_pos.y    ][pc_pos.x - 1] == water ||
          map->terrain_map[pc_pos.y    ][pc_pos.x - 1] == bridge)) {
-        action::move_dijkstra_trainer(path_heap, path_map, map, m);
+        move_dijkstra_trainer(path_heap, path_map, map, m, data);
         // move similar to wanderer_e
     } else {
         // just starting or already going up and need to continue
@@ -622,19 +784,19 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
                     m->set_pos_y(m->get_pos().y - 1);
                     map->trainer_map[m->get_pos().y][m->get_pos().x] = m;
                 } else if (map->trainer_map[m->get_pos().y - 1][m->get_pos().x]->get_type() == pc_e) {
-                    battle_outcome = battle();
+                    battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], m, data);
 
                     if (battle_outcome == 1) { // m won
                         map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                        random_turn(map, m);
+                        random_turn(map, m, data);
                     } else if (battle_outcome == -1) { // m lost
                         m->set_next_turn(-1);
                     }
                 } else {
-                    random_turn(map, m);
+                    random_turn(map, m, data);
                 }
             } else {
-                random_turn(map, m);
+                random_turn(map, m, data);
             }
             // just starting or already going right and need to continue
         } else if (m->get_dir().x >= 0 && m->get_dir().y == 0) {
@@ -646,19 +808,19 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
                     m->set_pos_x(m->get_pos().x + 1);
                     map->trainer_map[m->get_pos().y][m->get_pos().x] = m;
                 } else if (map->trainer_map[m->get_pos().y][m->get_pos().x + 1]->get_type() == pc_e) {
-                    battle_outcome = battle();
+                    battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], m, data);
 
                     if (battle_outcome == 1) { // m won
                         map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                        random_turn(map, m);
+                        random_turn(map, m, data);
                     } else if (battle_outcome == -1) { // m lost
                         m->set_next_turn(-1);
                     }
                 } else {
-                    random_turn(map, m);
+                    random_turn(map, m, data);
                 }
             } else {
-                random_turn(map, m);
+                random_turn(map, m, data);
             }
             // just starting or already going down and need to continue
         } else if (m->get_dir().x == 0 && m->get_dir().y >= 0) {
@@ -670,19 +832,19 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
                     m->set_pos_y(m->get_pos().y + 1);
                     map->trainer_map[m->get_pos().y][m->get_pos().x] = m;
                 } else if (map->trainer_map[m->get_pos().y + 1][m->get_pos().x]->get_type() == pc_e) {
-                    battle_outcome = battle();
+                    battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], m, data);
 
                     if (battle_outcome == 1) { // m won
                         map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                        random_turn(map, m);
+                        random_turn(map, m, data);
                     } else if (battle_outcome == -1) { // m lost
                         m->set_next_turn(-1);
                     }
                 } else {
-                    random_turn(map, m);
+                    random_turn(map, m, data);
                 }
             } else {
-                random_turn(map, m);
+                random_turn(map, m, data);
             }
             // just starting or already going left and need to continue
         } else if (m->get_dir().x <= 0 && m->get_dir().y == 0) {
@@ -694,19 +856,19 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
                     m->set_pos_x(m->get_pos().x - 1);
                     map->trainer_map[m->get_pos().y][m->get_pos().x] = m;
                 } else if (map->trainer_map[m->get_pos().y][m->get_pos().x - 1]->get_type() == pc_e) {
-                    battle_outcome = battle();
+                    battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], m, data);
 
                     if (battle_outcome == 1) { // m won
                         map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
-                        random_turn(map, m);
+                        random_turn(map, m, data);
                     } else if (battle_outcome == -1) { // m lost
                         m->set_next_turn(-1);
                     }
                 } else {
-                    random_turn(map, m);
+                    random_turn(map, m, data);
                 }
             } else {
-                random_turn(map, m);
+                random_turn(map, m, data);
             }
         }
 
@@ -716,7 +878,7 @@ void action::move_swimmer(heap_t *path_heap, path path_map[MAP_HEIGHT][MAP_WIDTH
     }
 }
 
-void action::move_pacer(map *map, npc *p)
+void move_pacer(map *map, npc *p, Data *data)
 {
     terrain_e current_terrain;
     int battle_outcome;
@@ -733,7 +895,7 @@ void action::move_pacer(map *map, npc *p)
             p->set_pos_x(p->get_pos().x + 1);
             map->trainer_map[p->get_pos().y][p->get_pos().x] = p;
         } else if (map->trainer_map[p->get_pos().y    ][p->get_pos().x + 1]->get_type() == pc_e) {
-            battle_outcome = battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], p, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
@@ -750,7 +912,7 @@ void action::move_pacer(map *map, npc *p)
             p->set_pos_x(p->get_pos().x - 1);
             map->trainer_map[p->get_pos().y][p->get_pos().x] = p;
         } else if (map->trainer_map[p->get_pos().y    ][p->get_pos().x - 1]->get_type() == pc_e) {
-            battle_outcome = battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], p, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
@@ -769,7 +931,7 @@ void action::move_pacer(map *map, npc *p)
             p->set_pos_x(p->get_pos().x + 1);
             map->trainer_map[p->get_pos().y][p->get_pos().x] = p;
         } else if (map->trainer_map[p->get_pos().y    ][p->get_pos().x + 1]->get_type() == pc_e) {
-            battle_outcome = battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], p, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
@@ -788,7 +950,7 @@ void action::move_pacer(map *map, npc *p)
             p->set_pos_x(p->get_pos().x - 1);
             map->trainer_map[p->get_pos().y][p->get_pos().x] = p;
         } else if (map->trainer_map[p->get_pos().y    ][p->get_pos().x - 1]->get_type() == pc_e) {
-            battle_outcome = battle();
+            battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], p, data);
 
             if (battle_outcome == 1) { // npc won
                 map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
@@ -803,7 +965,7 @@ void action::move_pacer(map *map, npc *p)
                 p->set_pos_x(p->get_pos().x + 1);
                 map->trainer_map[p->get_pos().y][p->get_pos().x] = p;
             } else if (map->trainer_map[p->get_pos().y    ][p->get_pos().x + 1]->get_type() == pc_e) {
-                battle_outcome = battle();
+                battle_outcome = battle((pc *)map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x], p, data);
 
                 if (battle_outcome == 1) { // npc won
                     map->trainer_map[map->get_pc_pos().y][map->get_pc_pos().x]->set_next_turn(-1);
