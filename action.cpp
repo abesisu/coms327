@@ -1083,8 +1083,9 @@ Pokemon *encounter(pc *pc, Data *data, int manhattan_distance)
 
                 break;
             case '3':
-                done = (rand() % 3 > 1) ? 1 : 0; // fail to flee 1 out of 3 times
+                done = (rand() % 3 > 0) ? 1 : 0; // fail to flee 1 out of 3 times
                 if (!done) { // enemy attacks
+                    mvprintw(0, 40, "You failed to flee!");
                     if (pokemon->get_move(1) == 0) {
                         attack(pokemon, pc->get_pokemon(chosen_pokemon), data, 0, -1);
                     } else {
