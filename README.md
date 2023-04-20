@@ -7,7 +7,9 @@ Over the course of the Spring 2023 semester, I will build a terminal-based versi
 Battle system is now implemented!
 
 ```
-The player will now encounter wild pokemon to capture them and battle other trainers!
+The player will now encounter wild pokemon to capture them and battle other trainers! 
+At times, the game may crash on the select starter screen. This does not happen every time 
+so restart the game.
 ```
 
 To test the features, run `make` then `./play` to load the game. Traverse the world
