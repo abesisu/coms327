@@ -91,7 +91,11 @@ void display(Setup *setup, std::vector<Card*> *hand)
     if ((*hand).size() > 3) {
         mvprintw(14, 0, "Error with stock draw.");
     } else if ((*hand).size() == 3) {
-        mvprintw(14, 0, "Stock Size: %d Stock Draw: %c  %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char(), (*hand)[2]->get_rank_char());
+        if (setup->stock.size() < 10) {
+            mvprintw(14, 0, "Stock Size: %d  Stock Draw: %c  %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char(), (*hand)[2]->get_rank_char());
+        } else {
+            mvprintw(14, 0, "Stock Size: %d Stock Draw: %c  %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char(), (*hand)[2]->get_rank_char());
+        }
         if ((*hand)[0]->is_red()) {
             attron(COLOR_PAIR(COLOR_RED));
             mvaddch(14, 28, (*hand)[0]->get_suit_char());
@@ -122,7 +126,11 @@ void display(Setup *setup, std::vector<Card*> *hand)
             attroff(COLOR_PAIR(COLOR_WHITE));
         }
     } else if ((*hand).size() == 2) {
-        mvprintw(14, 0, "Stock Size: %d Stock Draw: %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char());
+        if (setup->stock.size() < 10) {
+            mvprintw(14, 0, "Stock Size: %d  Stock Draw: %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char());
+        } else {
+            mvprintw(14, 0, "Stock Size: %d Stock Draw: %c  %c ", setup->stock.size(), (*hand)[0]->get_rank_char(), (*hand)[1]->get_rank_char());
+        }
         if ((*hand)[0]->is_red()) {
             attron(COLOR_PAIR(COLOR_RED));
             mvaddch(14, 28, (*hand)[0]->get_suit_char());
@@ -143,7 +151,11 @@ void display(Setup *setup, std::vector<Card*> *hand)
             attroff(COLOR_PAIR(COLOR_WHITE));
         }
     } else if ((*hand).size() == 1) {
-        mvprintw(14, 0, "Stock Size: %d Stock Draw: %c ", setup->stock.size(), (*hand)[0]->get_rank_char());
+        if (setup->stock.size() < 10) {
+            mvprintw(14, 0, "Stock Size: %d  Stock Draw: %c ", setup->stock.size(), (*hand)[0]->get_rank_char());
+        } else {
+            mvprintw(14, 0, "Stock Size: %d Stock Draw: %c ", setup->stock.size(), (*hand)[0]->get_rank_char());
+        }
         if ((*hand)[0]->is_red()) {
             attron(COLOR_PAIR(COLOR_RED));
             mvaddch(14, 28, (*hand)[0]->get_suit_char());
@@ -177,6 +189,133 @@ Setup *init_setup()
     setup = new Setup(deck);
 
     return setup;
+}
+
+int place_from_column(Setup *setup, int column)
+{
+    int i;
+    int cancel = 0;
+    int card_placed;
+    char key;
+
+    i = 0;
+    while (setup->tableu_columns[i][column] != 0 && i < 13) {
+        i++;
+    }
+
+    if (i >= 13) {
+        return 0;
+    }
+
+    if (i == 0 && setup->tableu[column].empty()) {
+        return 0;
+    }
+
+    move(15, 0);
+    clrtoeol();
+    move(16, 0);
+    clrtoeol();
+    mvprintw(15, 0, "To place in the foundation, press 'H', 'D', 'C', or 'S'.");
+    mvprintw(16, 0, "Press 1-7 to place in a column. Press 'x' to cancel.");
+    refresh();
+
+    while (!cancel) {
+        key = getch();
+        switch (key) {
+            case 'x':
+                cancel = 1;
+                card_placed = 0;
+                break;
+            case 'H':
+                if (i == 0) {
+                    cancel = setup->stack_foundation(setup->tableu[column].top(), 0);
+                    if (cancel) {
+                        setup->tableu[column].pop();
+                        card_placed = 1;
+                    }
+                } else {
+                    cancel = setup->stack_foundation(setup->tableu_columns[i - 1][column], 0);
+                    if (cancel) {
+                        setup->tableu_columns[i - 1][column] = 0;
+                        card_placed = 1;
+                    }
+                }
+                break;
+            case 'D':
+                if (i == 0) {
+                    cancel = setup->stack_foundation(setup->tableu[column].top(), 1);
+                    if (cancel) {
+                        setup->tableu[column].pop();
+                        card_placed = 1;
+                    }
+                } else {
+                    cancel = setup->stack_foundation(setup->tableu_columns[i - 1][column], 1);
+                    if (cancel) {
+                        setup->tableu_columns[i - 1][column] = 0;
+                        card_placed = 1;
+                    }
+                }
+                break;
+            case 'C':
+                if (i == 0) {
+                    cancel = setup->stack_foundation(setup->tableu[column].top(), 2);
+                    if (cancel) {
+                        setup->tableu[column].pop();
+                        card_placed = 1;
+                    }
+                } else {
+                    cancel = setup->stack_foundation(setup->tableu_columns[i - 1][column], 2);
+                    if (cancel) {
+                        setup->tableu_columns[i - 1][column] = 0;
+                        card_placed = 1;
+                    }
+                }
+                break;
+            case 'S':
+                if (i == 0) {
+                    cancel = setup->stack_foundation(setup->tableu[column].top(), 3);
+                    if (cancel) {
+                        setup->tableu[column].pop();
+                        card_placed = 1;
+                    }
+                } else {
+                    cancel = setup->stack_foundation(setup->tableu_columns[i - 1][column], 3);
+                    if (cancel) {
+                        setup->tableu_columns[i - 1][column] = 0;
+                        card_placed = 1;
+                    }
+                }
+                break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+                if (i == 0 && column != key - '0' - 1) {
+                    cancel = setup->stack_column(setup->tableu[column].top(), key - '0' - 1);
+                    if (cancel) {
+                        setup->tableu[column].pop();
+                        card_placed = 1;
+                    }
+                } else if (column != key - '0' - 1) {
+                    cancel = setup->stack_column(setup->tableu_columns[i - 1][column], key - '0' - 1);
+                    if (cancel) {
+                        setup->tableu_columns[i - 1][column] = 0;
+                        card_placed = 1;
+                    }
+                } else {
+                    cancel = 0;
+                }
+                break;
+            default:
+                cancel = 0;
+                break;
+        }
+    }
+
+    return card_placed;
 }
 
 int place_from_hand(Setup *setup, Card *card)
@@ -267,7 +406,10 @@ int move_pile(Setup *setup, int column, int num)
     clrtoeol();
     move(16, 0);
     clrtoeol();
-    mvprintw(15, 0, "Press 1-7 to place in a column. Press 'x' to cancel.");
+    if (num == 1) {
+        cancel = place_from_column(setup, column);
+    }
+    mvprintw(15, 0, "Press 1-7 to place in a column or press 'x' to cancel.");
     refresh();
 
     while (!cancel) {
@@ -323,133 +465,6 @@ int move_pile(Setup *setup, int column, int num)
     return cards_placed;
 }
 
-int place_from_column(Setup *setup, int column)
-{
-    int i;
-    int cancel = 0;
-    int card_placed;
-    char key;
-
-    i = 0;
-    while (setup->tableu_columns[i][column] != 0 && i < 13) {
-        i++;
-    }
-
-    if (i >= 13) {
-        return 0;
-    }
-
-    if (i == 0 && setup->tableu[column].empty()) {
-        return 0;
-    }
-
-    move(15, 0);
-    clrtoeol();
-    move(16, 0);
-    clrtoeol();
-    mvprintw(15, 0, "To place in the foundation, press 'H', 'D', 'C', or 'S'.");
-    mvprintw(16, 0, "Press 1-7 to place in a column. Press 'x' to cancel.");
-    refresh();
-
-    while (!cancel) {
-        key = getch();
-        switch (key) {
-            case 'x':
-                cancel = 1;
-                card_placed = 0;
-                break;
-            case 'H':
-                if (i == 0) {
-                    cancel = setup->stack_foundation(setup->tableu[column].top(), 0);
-                    if (cancel) {
-                        setup->tableu[column].pop();
-                        card_placed = 1;
-                    }
-                } else {
-                    cancel = setup->stack_foundation(setup->tableu_columns[i][column], 0);
-                    if (cancel) {
-                        setup->tableu_columns[i][column] = 0;
-                        card_placed = 1;
-                    }
-                }
-                break;
-            case 'D':
-                if (i == 0) {
-                    cancel = setup->stack_foundation(setup->tableu[column].top(), 1);
-                    if (cancel) {
-                        setup->tableu[column].pop();
-                        card_placed = 1;
-                    }
-                } else {
-                    cancel = setup->stack_foundation(setup->tableu_columns[i][column], 1);
-                    if (cancel) {
-                        setup->tableu_columns[i][column] = 0;
-                        card_placed = 1;
-                    }
-                }
-                break;
-            case 'C':
-                if (i == 0) {
-                    cancel = setup->stack_foundation(setup->tableu[column].top(), 2);
-                    if (cancel) {
-                        setup->tableu[column].pop();
-                        card_placed = 1;
-                    }
-                } else {
-                    cancel = setup->stack_foundation(setup->tableu_columns[i][column], 2);
-                    if (cancel) {
-                        setup->tableu_columns[i][column] = 0;
-                        card_placed = 1;
-                    }
-                }
-                break;
-            case 'S':
-                if (i == 0) {
-                    cancel = setup->stack_foundation(setup->tableu[column].top(), 3);
-                    if (cancel) {
-                        setup->tableu[column].pop();
-                        card_placed = 1;
-                    }
-                } else {
-                    cancel = setup->stack_foundation(setup->tableu_columns[i][column], 3);
-                    if (cancel) {
-                        setup->tableu_columns[i][column] = 0;
-                        card_placed = 1;
-                    }
-                }
-                break;
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-                if (i == 0 && column != key - '0' - 1) {
-                    cancel = setup->stack_column(setup->tableu[column].top(), key - '0' - 1);
-                    if (cancel) {
-                        setup->tableu[column].pop();
-                        card_placed = 1;
-                    }
-                } else if (column != key - '0' - 1) {
-                    cancel = setup->stack_column(setup->tableu_columns[i][column], key - '0' - 1);
-                    if (cancel) {
-                        setup->tableu_columns[i][column] = 0;
-                        card_placed = 1;
-                    }
-                } else {
-                    cancel = 0;
-                }
-                break;
-            default:
-                cancel = 0;
-                break;
-        }
-    }
-
-    return card_placed;
-}
-
 int main(int argc, char *argv[])
 {
     Setup *setup;
@@ -458,9 +473,7 @@ int main(int argc, char *argv[])
     int card_placed;
     int cards_placed;
     char key;
-    // int num = -1;
     int input;
-    // char num_str[3];
 
     setup = init_setup();
     hand = std::vector<Card*>();
@@ -497,14 +510,14 @@ int main(int argc, char *argv[])
             case '7':
                 if (setup->tableu_columns[0][key - '0' - 1] != 0) {
                     input = -1;
-                    move(15, 0);
-                    clrtoeol();
-                    move(16, 0);
-                    clrtoeol();
-                    mvprintw(15, 0, "Enter the number of cards to move or 0 to cancel: ");
-                    refresh();
-                    echo();
                     while (input < 0 || input > 13) {
+                        move(15, 0);
+                        clrtoeol();
+                        move(16, 0);
+                        clrtoeol();
+                        mvprintw(15, 0, "Enter the number of cards to move or 0 to cancel: ");
+                        refresh();
+                        echo();
                         scanw((char *)"%d", &input);
                         noecho();
                         if (input == 0) {
