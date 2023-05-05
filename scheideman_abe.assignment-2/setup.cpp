@@ -128,7 +128,7 @@ int Setup::stock_replace(std::vector<Card*> *hand)
         return -1;
     }
 
-    for (i = 0; i < hand->size(); i++) {
+    for (i = 0; i < static_cast<int>(hand->size()); i++) {
         stock.push((*hand)[i]);
     }
 
