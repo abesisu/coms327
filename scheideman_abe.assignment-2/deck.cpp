@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "deck.h"
 
 Deck::Deck() 
@@ -24,7 +26,7 @@ Card *Deck::draw_card()
 
 void Deck::shuffle() {
     int i, j, n;
-    srand(time(NULL));
+    srand(time(0));
 
     n = cards.size();
 
