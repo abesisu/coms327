@@ -1,0 +1,15 @@
+Author: Abe Scheideman
+
+This project runs the game Solitare using C++ and ncurses in the console! 
+How to play can be found in this YouTube video: 
+https://www.youtube.com/watch?v=mqAqy1q6gM8&ab_channel=OnlineSolitaire.
+
+To play the game in the console:
+    1. Run 'make'
+    2. Run ./solitare
+
+
+To create a tarball, run:
+    1. 'make clean' in this directory
+    2. 'tar cvfz scheideman_abe.assignment-2.tar.gz scheideman_abe.assignment-2'
+        from the parent directory
